@@ -6,6 +6,7 @@
 
 Rise In × Stellar Pro Hackathon 2026 · **Genesis Track** · Istanbul
 
+[![Live demo](https://img.shields.io/badge/live%20demo-runforrest.vercel.app-fdda24?style=flat-square)](https://runforrest.vercel.app)
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-fdda24?style=flat-square)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Soroban-SDK_23-fdda24?style=flat-square)](https://developers.stellar.org)
 [![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)](https://nextjs.org)
@@ -68,6 +69,8 @@ facing the same wall can reuse this shape.
 
 ## Live on Stellar Testnet
 
+**App: [runforrest.vercel.app](https://runforrest.vercel.app)**
+
 | Contract | Address |
 |---|---|
 | `runforrest_challenge` | [`CCHAZGD364VSQU2VI7DKIKCYKYON77GLWDUHSF5XFF4AL7VUUOJC43JZ`](https://stellar.expert/explorer/testnet/contract/CCHAZGD364VSQU2VI7DKIKCYKYON77GLWDUHSF5XFF4AL7VUUOJC43JZ) |
@@ -86,6 +89,11 @@ Machine-readable: [`deployments.json`](deployments.json)
 ---
 
 ## Try it
+
+**Live: [runforrest.vercel.app](https://runforrest.vercel.app)** — nothing to install.
+Bring a Stellar wallet extension set to **Testnet** (Freighter recommended).
+
+To run it locally instead:
 
 ```bash
 cd web && npm install && cp .env.example .env.local && npm run dev

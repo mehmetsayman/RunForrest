@@ -25,5 +25,6 @@
     "entry_fee_usdc": "10",
     "target_km": 50,
     "window_days": 7
-  }
+  },
+  "app_url": "https://runforrest.vercel.app"
 }
