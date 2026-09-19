@@ -1,0 +1,29 @@
+{
+  "network": "testnet",
+  "network_passphrase": "Test SDF Network ; September 2015",
+  "deployed_at": "2026-09-20T00:00:00Z",
+  "admin": "GB2W3V2BPYJABSXNYWLGQS4KIXLTDTRD2CL2Z36SS5B2I3CZPE7H7Y5Y",
+  "attestor": "GB2W3V2BPYJABSXNYWLGQS4KIXLTDTRD2CL2Z36SS5B2I3CZPE7H7Y5Y",
+  "contracts": {
+    "runforrest_challenge": "CCHAZGD364VSQU2VI7DKIKCYKYON77GLWDUHSF5XFF4AL7VUUOJC43JZ",
+    "runforrest_badge": "CBEMQGDLL2KNMBSINUSQM7QXMKAOMFIJDFQL27F3ZEWSRYA75WB3VCU6"
+  },
+  "integrations": {
+    "prize_vault": "CCHEMDA647SX2RPQ4FYQ3HLDXLVSREQSIAWXVQ2AYRMEHPQLVSGXASI7",
+    "defindex_factory": "CDSCWE4GLNBYYTES2OCYDFQA2LLY4RBIAX6ZI32VSUXD7GO6HRPO4A32",
+    "usdc_sac": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+    "usdc_issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    "anchor_home_domain": "tr-mock-anchor.fly.dev"
+  },
+  "explorer": {
+    "runforrest_challenge": "https://stellar.expert/explorer/testnet/contract/CCHAZGD364VSQU2VI7DKIKCYKYON77GLWDUHSF5XFF4AL7VUUOJC43JZ",
+    "runforrest_badge": "https://stellar.expert/explorer/testnet/contract/CBEMQGDLL2KNMBSINUSQM7QXMKAOMFIJDFQL27F3ZEWSRYA75WB3VCU6",
+    "prize_vault": "https://stellar.expert/explorer/testnet/contract/CCHEMDA647SX2RPQ4FYQ3HLDXLVSREQSIAWXVQ2AYRMEHPQLVSGXASI7"
+  },
+  "demo_challenge": {
+    "id": 0,
+    "entry_fee_usdc": "10",
+    "target_km": 50,
+    "window_days": 7
+  }
+}

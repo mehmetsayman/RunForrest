@@ -1,0 +1,371 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-inconsolata), ui-monospace, monospace;
+  --font-heading: var(--font-inter), system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-stellar: var(--stellar);
+  --color-stellar-light: var(--stellar-light);
+  --color-stellar-muted: var(--stellar-muted);
+  --color-stellar-lilac: var(--stellar-lilac);
+  --color-stellar-teal: var(--stellar-teal);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Stellar Design System v4.0.2 — sds-theme-dark
+     Değerler @stellar/design-system paketinden alındı, tahmin değil.
+     Marka rengi altın (#fdda24) — Stellar'ın imza tonu. */
+  --background: #000000;
+  --foreground: #ededed;              /* gray-12 */
+  --card: rgba(255, 255, 255, 0.035);
+  --card-foreground: #ededed;
+  --popover: #161616;                 /* gray-01 */
+  --popover-foreground: #ededed;
+  --primary: #fdda24;                 /* gold-09 — Stellar imzası */
+  --primary-foreground: #161616;      /* altın üstünde koyu metin */
+  --secondary: rgba(253, 218, 36, 0.12);
+  --secondary-foreground: #ffef5c;    /* gold-10 */
+  --muted: rgba(255, 255, 255, 0.055);
+  --muted-foreground: #a0a0a0;        /* gray-11 */
+  --accent: rgba(158, 140, 252, 0.16);
+  --accent-foreground: #9e8cfc;       /* lilac-11 */
+  --destructive: #ff6369;             /* red-11 */
+  --success: #4cc38a;                 /* green-11 */
+  --warning: #ffb224;                 /* amber-09 */
+  --info: #00c2d7;                    /* teal-11 */
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #fdda24;
+
+  /* Marka tonları — sınıf adları korundu, değerler Stellar'a geçti */
+  --stellar: #fdda24;                 /* gold-09 */
+  --stellar-light: #ffef5c;           /* gold-10 */
+  --stellar-muted: #f0c000;           /* gold-11 */
+  --stellar-lilac: #9e8cfc;           /* lilac-11 */
+  --stellar-teal: #00c2d7;            /* teal-11 */
+
+  --surface: #0a0a0a;
+  --surface-elevated: #161616;        /* gray-01 */
+  --chart-1: #fdda24;
+  --chart-2: #9e8cfc;
+  --chart-3: #00c2d7;
+  --chart-4: #4cc38a;
+  --chart-5: #ffb224;
+  --radius: 0.875rem;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #fdda24;
+  --sidebar-primary-foreground: #161616;
+  --sidebar-accent: rgba(253, 218, 36, 0.12);
+  --sidebar-accent-foreground: #ffef5c;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #fdda24;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ededed;
+  --card: rgba(255, 255, 255, 0.04);
+  --card-foreground: #ededed;
+  --popover: #161616;
+  --popover-foreground: #ededed;
+  --primary: #fdda24;
+  --primary-foreground: #161616;
+  --secondary: rgba(253, 218, 36, 0.12);
+  --secondary-foreground: #ffef5c;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #a0a0a0;
+  --accent: rgba(253, 218, 36, 0.18);
+  --accent-foreground: #ffef5c;
+  --destructive: #ff6369;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #fdda24;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background: rgba(253, 218, 36, 0.3);
+    color: #161616;
+  }
+  :focus-visible {
+    outline: 2px solid rgba(253, 218, 36, 0.6);
+    outline-offset: 2px;
+  }
+  img, svg {
+    @apply select-none;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl;
+  }
+
+  .glass-strong {
+    @apply border border-white/[0.12] bg-white/[0.07] backdrop-blur-2xl;
+  }
+
+  .neon-glow {
+    box-shadow:
+      0 0 20px rgba(253, 218, 36, 0.26),
+      0 0 60px rgba(253, 218, 36, 0.1);
+  }
+
+  .neon-glow-sm {
+    box-shadow: 0 0 16px rgba(253, 218, 36, 0.18);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-[#ffef5c] to-[#fdda24] bg-clip-text text-transparent;
+  }
+
+  .text-gradient-stellar {
+    @apply bg-gradient-to-r from-[#ffef5c] via-[#fdda24] to-[#ffb224] bg-clip-text text-transparent;
+  }
+
+  .mesh-bg {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(253, 218, 36, 0.14), transparent),
+      radial-gradient(ellipse 65% 45% at 100% 5%, rgba(158, 140, 252, 0.13), transparent),
+      radial-gradient(ellipse 55% 35% at 0% 100%, rgba(0, 194, 215, 0.1), transparent),
+      #000000;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Başlıklar da Inter — Stellar tek aile kullanıyor; ayrım ağırlık ve
+     harf aralığıyla yapılıyor, ikinci bir aileyle değil. */
+  .font-heading {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(253, 218, 36, 0.22); }
+  50% { box-shadow: 0 0 34px rgba(253, 218, 36, 0.4), 0 0 68px rgba(253, 218, 36, 0.12); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+}
+
+@keyframes grid-pulse {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.08; }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.animate-orbit {
+  animation: orbit 20s linear infinite;
+}
+
+.animate-grid-pulse {
+  animation: grid-pulse 4s ease-in-out infinite;
+}
+
+/* Page transitions */
+@keyframes page-enter {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.4s ease-out both;
+}
+
+/* Skeleton loading */
+@keyframes skeleton {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton 1.8s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+/* Smooth interactive states */
+.interactive {
+  @apply transition-all duration-200 ease-out;
+}
+
+.interactive:hover {
+  @apply bg-white/[0.06];
+}
+
+.interactive:active {
+  @apply scale-[0.98];
+}
+
+/* Card depth layers */
+.card-elevated {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.card-elevated-glow {
+  box-shadow:
+    0 0 0 1px rgba(253, 218, 36, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 0 24px rgba(253, 218, 36, 0.12);
+}
+
+/* Button press feedback */
+@keyframes btn-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.btn-press:active {
+  animation: btn-press 0.15s ease-out;
+}
+
+/* Neon text glow */
+.neon-text {
+  text-shadow: 0 0 20px rgba(253, 218, 36, 0.4), 0 0 40px rgba(253, 218, 36, 0.15);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Harita altlığı — OSM karolarını karanlık temaya uyarlama.
+
+   CARTO'nun dark_all altlığı artık anahtarsız kullanımda karonun
+   İÇİNE "API KEY REQUIRED" filigranı basıyor. OSM anahtarsız ve
+   filigransız ama açık temalı; invert + hue-rotate ile koyulaştırıyoruz.
+
+   Filtre YALNIZCA karo katmanına (.leaflet-tile-pane) uygulanır.
+   Rota çizgisi ve işaretçiler overlay-pane'de olduğu için Stellar
+   altını ve teal renklerini gerçek haliyle korur.
+   ───────────────────────────────────────────────────────────── */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(1.05) saturate(0.6);
+}
+
+/* Atıf kutusu OSM lisansı gereği görünür kalmalı; temaya uyarlıyoruz.
+   Kart köşeleri yuvarlatılmış ve overflow:hidden olduğu için kutu tam
+   kenara oturunca son harf kırpılıyordu — köşeden içeri alıyoruz. */
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.62) !important;
+  color: #a0a0a0 !important;
+  font-size: 9px !important;
+  line-height: 1.5 !important;
+  padding: 1px 6px !important;
+  margin: 0 6px 6px 0 !important;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+.leaflet-control-attribution a {
+  color: #fdda24 !important;
+}

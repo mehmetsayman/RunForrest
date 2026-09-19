@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Inconsolata:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* Stellar Design System v4.0.2 — sds-theme-dark */
+  :root {
+    --gold-09: #fdda24;
+    --gold-10: #ffef5c;
+    --gold-11: #f0c000;
+    --amber-09: #ffb224;
+    --lilac-11: #9e8cfc;
+    --teal-11: #00c2d7;
+    --gray-11: #a0a0a0;
+    --gray-12: #ededed;
+    --gray-06: #343434;
+    --ink: #161616;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body { background: #000; }
+
+  .banner {
+    position: relative;
+    width: 1280px;
+    height: 640px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 55% at 22% -10%, rgba(253, 218, 36, 0.20), transparent 70%),
+      radial-gradient(ellipse 55% 50% at 100% 12%, rgba(158, 140, 252, 0.16), transparent 70%),
+      radial-gradient(ellipse 60% 45% at 8% 105%, rgba(0, 194, 215, 0.13), transparent 70%),
+      #000;
+    font-family: Inter, system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ince ızgara — derinlik, dikkat dağıtmadan */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 30%, transparent 78%);
+  }
+
+  /* koşu rotası motifi — ürünün ne olduğunu tek çizgide anlatıyor */
+  .route { position: absolute; right: -20px; top: 0; height: 100%; width: 560px; opacity: .95; }
+
+  /* GÜVENLİ ALAN: içerik merkezi %75'te kalıyor */
+  .content { position: relative; padding: 0 0 0 96px; max-width: 820px; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: Inconsolata, ui-monospace, monospace;
+    font-size: 17px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--gold-09);
+    border: 1px solid rgba(253,218,36,.3);
+    background: rgba(253,218,36,.08);
+    padding: 9px 16px; border-radius: 999px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold-09); box-shadow: 0 0 10px var(--gold-09); }
+
+  h1 {
+    margin-top: 30px;
+    font-size: 104px; font-weight: 900; line-height: .92;
+    letter-spacing: -.045em; color: #fff;
+  }
+  h1 .accent {
+    background: linear-gradient(100deg, var(--gold-10) 0%, var(--gold-09) 45%, var(--amber-09) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .tagline {
+    margin-top: 26px; font-size: 31px; font-weight: 500;
+    line-height: 1.32; color: var(--gray-12); max-width: 660px;
+    letter-spacing: -.012em;
+  }
+  .tagline b { color: var(--gold-09); font-weight: 700; }
+
+  .chips { margin-top: 38px; display: flex; gap: 10px; flex-wrap: nowrap; }
+  .chip {
+    font-family: Inconsolata, ui-monospace, monospace;
+    font-size: 15px; font-weight: 600; color: var(--gray-12);
+    border: 1px solid var(--gray-06);
+    background: rgba(255,255,255,.045);
+    padding: 9px 14px; border-radius: 10px; white-space: nowrap;
+  }
+  .chip .k { color: var(--gray-11); }
+
+  .foot {
+    position: absolute; left: 96px; bottom: 46px;
+    font-size: 19px; color: var(--gray-11); font-weight: 500;
+  }
+  .foot b { color: var(--gray-12); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div class="grid"></div>
+
+    <!-- koşu rotası: başlangıç noktası, yol, varış -->
+    <svg class="route" viewBox="0 0 560 640" fill="none">
+      <defs>
+        <linearGradient id="rg" x1="0" y1="640" x2="520" y2="0">
+          <stop offset="0%" stop-color="#00c2d7" stop-opacity=".25"/>
+          <stop offset="48%" stop-color="#9e8cfc" stop-opacity=".55"/>
+          <stop offset="100%" stop-color="#fdda24"/>
+        </linearGradient>
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="11" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M40 600 C 150 520, 90 420, 210 380 S 400 330, 330 230 S 330 110, 470 70"
+            stroke="url(#rg)" stroke-width="5" stroke-linecap="round" filter="url(#glow)"/>
+      <circle cx="40" cy="600" r="11" fill="#00c2d7" opacity=".85"/>
+      <circle cx="470" cy="70" r="15" fill="#fdda24" filter="url(#glow)"/>
+      <circle cx="470" cy="70" r="30" fill="none" stroke="#fdda24" stroke-width="2" opacity=".35"/>
+    </svg>
+
+    <div class="content">
+      <div class="eyebrow"><span class="dot"></span> Proof of Active Lifestyle</div>
+
+      <h1>Run<span class="accent">Forrest</span></h1>
+
+      <p class="tagline">
+        Koş, kazan, <b>Türk Lirası</b> olarak çek.<br/>
+        Ödül havuzu bir vaat değil — <b>bir kontrat</b>.
+      </p>
+
+      <div class="chips">
+        <span class="chip"><span class="k">chain:</span> Stellar</span>
+        <span class="chip"><span class="k">contracts:</span> Soroban</span>
+        <span class="chip"><span class="k">fiat:</span> SEP-6 Anchor</span>
+        <span class="chip"><span class="k">vault:</span> DeFindex</span>
+      </div>
+    </div>
+
+    <div class="foot">Rise In × Stellar Pro Hackathon 2026 · <b>Genesis Track</b> · İstanbul</div>
+  </div>
+</body>
+</html>
