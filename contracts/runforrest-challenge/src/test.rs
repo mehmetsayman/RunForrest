@@ -415,3 +415,49 @@ fn recorded_shares_match_the_real_vault_balance() {
     let pool = f.client.finalize(&id);
     assert_eq!(pool, real);
 }
+
+/// REGRESYON: kimse koşmazsa havuz kontratta kilitlenmemeli.
+///
+/// Katılımcılar var ama hiçbirinin koşusu onaylanmadıysa (attestor düşmüş,
+/// pencere kısa kalmış, kimse çıkmamış) kazanan yok. Dağıtım yapılmazsa
+/// herkesin payout'u 0 kalır, claim() herkese NothingToClaim döner ve
+/// vault'tan çekilen para kontratta kalıcı olarak sıkışır.
+///
+/// Doğru davranış: katılım ücretleri sahiplerine iade edilir.
+#[test]
+fn nobody_ran_refunds_every_participant() {
+    let f = setup();
+    let id = open_challenge(&f, 10 * USDC);
+
+    let a = runner(&f, 50 * USDC);
+    let b = runner(&f, 50 * USDC);
+    let c = runner(&f, 50 * USDC);
+    for r in [&a, &b, &c] {
+        f.client.join(&id, r);
+    }
+    // Bilerek hiç record_progress çağrılmıyor.
+
+    f.env.ledger().set_timestamp(f.env.ledger().timestamp() + 2000);
+    let pool = f.client.finalize(&id);
+
+    let pa = f.client.get_participant(&id, &a).payout;
+    let pb = f.client.get_participant(&id, &b).payout;
+    let pc = f.client.get_participant(&id, &c).payout;
+
+    assert!(pa > 0 && pb > 0 && pc > 0, "herkes iade almalı");
+    assert_eq!(pa + pb + pc, pool, "havuzun tamamı iade edilmeli");
+
+    // Ve gerçekten çekilebilmeli — kontratta para kalmamalı.
+    let before = f.token.balance(&a);
+    let got = f.client.claim(&id, &a);
+    assert_eq!(got, pa);
+    assert_eq!(f.token.balance(&a), before + pa);
+
+    f.client.claim(&id, &b);
+    f.client.claim(&id, &c);
+    assert_eq!(
+        f.token.balance(&f.client.address),
+        0,
+        "kontratta sıkışan para kalmamalı"
+    );
+}

@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import Link from "next/link";
 import {
   Activity,
-  Award,
   Check,
   ChevronRight,
   Clock,
@@ -30,7 +28,6 @@ import { GlassCard } from "@/components/runforrest/glass-card";
 import { PageHeader } from "@/components/runforrest/page-header";
 import { NeonButton } from "@/components/runforrest/neon-button";
 import { Badge } from "@/components/ui/badge";
-import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { RunMap } from "@/components/map/dynamic-map";
 import { useGpsTracking } from "@/hooks/use-gps-tracking";
 import { useSaveRun } from "@/hooks/use-save-run";
@@ -76,18 +73,21 @@ export default function RunPage() {
   const attest = useAttest();
   const { id: activeChallengeId } = useActiveChallengeId();
   const [city, setCity] = useState("");
-  const [cityGuessed, setCityGuessed] = useState(false);
+  // Tahminin bir kez çalışmasını sağlayan bayrak. State değil ref:
+  // ekranda hiçbir şeyi değiştirmiyor, sadece tekrarı engelliyor —
+  // state olsaydı gereksiz bir render turu daha açardı.
+  const cityGuessed = useRef(false);
 
   // Koşu bitince ilk GPS noktasından şehri tahmin et; kullanıcı onaylar/düzeltir.
   useEffect(() => {
-    if (cityGuessed || gps.state !== "complete") return;
+    if (cityGuessed.current || gps.state !== "complete") return;
     const first = gps.stats.positions[0];
     if (!first) return;
-    setCityGuessed(true);
+    cityGuessed.current = true;
     reverseGeocodeCity(first[0], first[1]).then((c) => {
       if (c) setCity((prev) => prev || c);
     });
-  }, [gps.state, gps.stats.positions, cityGuessed]);
+  }, [gps.state, gps.stats.positions]);
 
   /**
    * Koşuyu kaydeder: rota Supabase'e (varsa), mesafe ve rozet zincire.
@@ -522,7 +522,7 @@ export default function RunPage() {
               ) : (
                 <>
                   <Zap className="size-4" />
-                  Kaydet ve Stellar'a yaz
+                  Kaydet ve Stellar&apos;a yaz
                 </>
               )}
             </button>
@@ -537,7 +537,7 @@ export default function RunPage() {
           {saved && (
             <NeonButton className="w-full justify-center gap-2" size="lg" href="/mint">
               <Zap className="size-4" />
-              Stellar'da doğrula
+              Stellar&apos;da doğrula
             </NeonButton>
           )}
 
@@ -815,7 +815,7 @@ export default function RunPage() {
               ) : (
                 <>
                   <Zap className="size-4" />
-                  {address ? "Kaydet ve Stellar'a yaz" : "Önce cüzdanı bağla"}
+                  {address ? "Kaydet ve Stellar&apos;a yaz" : "Önce cüzdanı bağla"}
                 </>
               )}
             </button>

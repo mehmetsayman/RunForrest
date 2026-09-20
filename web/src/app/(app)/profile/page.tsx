@@ -24,7 +24,6 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  Zap,
   ArrowDownToLine,
   ArrowUpFromLine,
 } from "lucide-react";
@@ -71,19 +70,6 @@ function RarityColor(rarity: string) {
     case "Rare": return "bg-[#00c2d7]/20 text-[#00c2d7]";
     default: return "bg-white/10 text-muted-foreground";
   }
-}
-
-function TimelineIcon({ type }: { type: string }) {
-  const colors: Record<string, string> = {
-    nft: "bg-primary/20 text-primary",
-    streak: "bg-amber-500/20 text-amber-400",
-    milestone: "bg-emerald-500/20 text-emerald-400",
-    social: "bg-blue-500/20 text-blue-400",
-    challenge: "bg-[#9e8cfc]/20 text-[#9e8cfc]",
-  };
-  return (
-    <div className={cn("flex size-2 rounded-full", colors[type]?.split(" ")[0] ?? "bg-white/10")} />
-  );
 }
 
 /* ─── PAGE ─── */
@@ -254,7 +240,7 @@ export default function ProfilePage() {
           { icon: Clock, label: "Süre", value: lifetimeStats.totalTime },
           { icon: TrendingUp, label: "Tempo", value: lifetimeStats.avgPace },
           { icon: Globe, label: "Şehir", value: lifetimeStats.cities },
-        ].map((stat, i) => (
+        ].map((stat) => (
           <GlassCard key={stat.label} className="p-2.5 text-center">
             <stat.icon className="mx-auto size-3.5 text-primary" />
             <p className="mt-1 text-sm font-bold tabular-nums">{stat.value}</p>

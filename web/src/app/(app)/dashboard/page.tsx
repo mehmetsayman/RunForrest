@@ -36,11 +36,18 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 /* ─── HELPERS ─── */
 
+/**
+ * Saate göre selamlama.
+ *
+ * Render sırasında okunamaz: sunucu UTC'ye, tarayıcı yerel saate göre
+ * farklı metin üretir ve hydration uyuşmazlığı çıkar. Bu yüzden mount
+ * sonrası hesaplanıyor; ilk boyamada nötr bir selam görünür.
+ */
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "Günaydın";
+  if (hour < 18) return "İyi günler";
+  return "İyi akşamlar";
 }
 
 function formatDuration(secs: number): string {
@@ -77,7 +84,11 @@ type DbRun = {
 /* ─── PAGE ─── */
 
 export default function DashboardPage() {
-  const greeting = getGreeting();
+  const [greeting, setGreeting] = useState("Merhaba");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGreeting(getGreeting());
+  }, []);
   const { isConnected, displayAddress, address } = useWallet();
   // Sayılar zincirden; veri yoksa "—" gösteriyoruz, uydurmuyoruz.
   const badges = useBadges(address);

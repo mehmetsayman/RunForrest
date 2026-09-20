@@ -8,7 +8,6 @@ import {
   Timer,
   TrendingUp,
   Users,
-  Wallet,
   Zap,
 } from "lucide-react";
 import { GlassCard } from "@/components/runforrest/glass-card";

@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Calendar,
   ChevronRight,
-  Clock,
   Crown,
   Flame,
   Globe,
@@ -186,7 +185,7 @@ export default function StellarMarathonClubPage() {
                 Çanakkale / Global
                 <span className="mx-1">·</span>
                 <Calendar className="size-3" />
-                Stellar Pro Hackathon 2026'da kuruldu
+                Stellar Pro Hackathon 2026&apos;da kuruldu
               </p>
             </div>
             <button
@@ -208,7 +207,7 @@ export default function StellarMarathonClubPage() {
       <GlassCard strong className="p-5">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Stellar üzerinde inşa eden mesafe koşucuları. We run together every Sunday and push each
-          other to go further. Stellar Pro Hackathon'da doğdu, artık küresel bir koşu topluluğu
+          other to go further. Stellar Pro Hackathon&apos;da doğdu, artık küresel bir koşu topluluğu
           on-chain.
         </p>
         <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">

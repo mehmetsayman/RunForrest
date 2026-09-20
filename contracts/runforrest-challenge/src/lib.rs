@@ -474,19 +474,33 @@ impl RunForrestChallenge {
             }
         }
 
-        // Dağıtım: 3+ kazanan 50/30/20, 2 kazanan 60/40, tek kazanan %100.
-        let splits: Vec<i128> = match top.len() {
-            0 => Vec::new(&env),
-            1 => soroban_sdk::vec![&env, 100i128],
-            2 => soroban_sdk::vec![&env, 60i128, 40i128],
-            _ => soroban_sdk::vec![&env, 50i128, 30i128, 20i128],
+        // Hiç kimse koşmadıysa (attestor düşmüş, pencere kısa kalmış, kimse
+        // çıkmamış) kazanan yok. Havuzu dağıtmadan bırakmak fonları kontratta
+        // kalıcı olarak kilitler: herkesin payout'u 0 kalır, claim() herkese
+        // NothingToClaim döner ve para bir daha çıkmaz.
+        // Bu durumda katılım ücretleri sahiplerine iade edilir.
+        let (payees, splits): (Vec<Address>, Vec<i128>) = if top.is_empty() {
+            let n = roster.len() as i128;
+            let mut equal = Vec::new(&env);
+            for _ in 0..roster.len() {
+                equal.push_back(100 / n);
+            }
+            (roster.clone(), equal)
+        } else {
+            // Dağıtım: 3+ kazanan 50/30/20, 2 kazanan 60/40, tek kazanan %100.
+            let s: Vec<i128> = match top.len() {
+                1 => soroban_sdk::vec![&env, 100i128],
+                2 => soroban_sdk::vec![&env, 60i128, 40i128],
+                _ => soroban_sdk::vec![&env, 50i128, 30i128, 20i128],
+            };
+            (top.clone(), s)
         };
 
         let mut assigned: i128 = 0;
-        for i in 0..top.len() {
-            let runner = top.get(i).unwrap();
-            let share = if i == top.len() - 1 {
-                // son kazanan kalanı alır — yuvarlama artığı kimsede kalmasın
+        for i in 0..payees.len() {
+            let runner = payees.get(i).unwrap();
+            let share = if i == payees.len() - 1 {
+                // son alan kalanı alır — yuvarlama artığı kimsede kalmasın
                 challenge.payout_pool - assigned
             } else {
                 challenge.payout_pool * splits.get(i).unwrap() / 100

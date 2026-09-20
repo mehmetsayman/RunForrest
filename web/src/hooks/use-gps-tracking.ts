@@ -52,8 +52,12 @@ function formatPace(metersPerSecond: number): string {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-function estimateCalories(distanceKm: number, durationMin: number): number {
-  // ~60 cal/km for ~70kg runner
+/**
+ * Kaba kalori tahmini. Mesafeye dayalı (~60 kcal/km, 70 kg koşucu);
+ * süre bilerek hesaba katılmıyor çünkü tempoya göre düzeltme yapmak
+ * kilo ve nabız verisi olmadan anlamlı doğruluk kazandırmıyor.
+ */
+function estimateCalories(distanceKm: number): number {
   return Math.round(distanceKm * 60);
 }
 
@@ -183,7 +187,7 @@ export function useGpsTracking(): GpsTracking {
             distance: totalDistance,
             pace: formatPace(speedMs),
             avgSpeed: parseFloat(((distanceKm / durationMin) * 60).toFixed(1)),
-            calories: estimateCalories(distanceKm, durationMin),
+            calories: estimateCalories(distanceKm),
           };
         });
       },
@@ -263,7 +267,7 @@ export function useGpsTracking(): GpsTracking {
             distance: totalDistance,
             pace: formatPace(speedMs),
             avgSpeed: parseFloat(((distanceKm / durationMin) * 60).toFixed(1)),
-            calories: estimateCalories(distanceKm, durationMin),
+            calories: estimateCalories(distanceKm),
           };
         });
       },

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   challenges,
   fromStroops,
+  usdcBalance,
   type Challenge,
   type Participant,
 } from "@/lib/stellar/contracts";
@@ -36,7 +37,7 @@ export type JoinOutcome =
   | { ok: false; error: string };
 
 export function useChallenge(challengeId: number | null) {
-  const { address, balance, hasTrustline, refresh: refreshWallet } = useWallet();
+  const { address, hasTrustline, refresh: refreshWallet } = useWallet();
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
@@ -45,6 +46,17 @@ export function useChallenge(challengeId: number | null) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastHash, setLastHash] = useState<string | null>(null);
+
+  /**
+   * Zaman, render sırasında okunamaz: Date.now() saf olmayan bir çağrı ve
+   * yarışma sayfa açıkken bittiğinde arayüz bunu fark etmez. Dakikada bir
+   * tikleyen bir state ile hem saflık korunuyor hem de bitiş anı yakalanıyor.
+   */
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async () => {
     if (challengeId === null) {
@@ -81,7 +93,15 @@ export function useChallenge(challengeId: number | null) {
     }
   }, [challengeId, address]);
 
+  /**
+   * Mount'ta ve bağımlılık değiştiğinde zincirden veri çeker.
+   *
+   * Kural setState'i effect içinde görüp uyarıyor; buradaki senkron çağrı
+   * yalnızca "yükleniyor" bayrağı, asıl veri await sonrası yazılıyor.
+   * Dış bir sistemden (Soroban RPC) veri çekmek effect'in tam da amacı.
+   */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -96,11 +116,16 @@ export function useChallenge(challengeId: number | null) {
 
     if (!hasTrustline) return { ok: false, needsTrustline: true };
 
-    if (balance < challenge.entry_fee) {
+    // Bakiye ZİNCİRDEN taze okunuyor, context'teki değerden değil.
+    // Ramp bittiğinde katılıma devam ediliyor; o anda context henüz
+    // tazelenmemiş olabiliyor ve kullanıcı parayı yatırdığı halde
+    // "yeterli USDC yok" uyarısı alıp yükleme ekranına geri düşüyordu.
+    const live = await usdcBalance(address);
+    if (live < challenge.entry_fee) {
       return {
         ok: false,
         needsFunding: true,
-        shortfall: fromStroops(challenge.entry_fee - balance),
+        shortfall: fromStroops(challenge.entry_fee - live),
       };
     }
 
@@ -118,7 +143,7 @@ export function useChallenge(challengeId: number | null) {
     } finally {
       setBusy(false);
     }
-  }, [address, challengeId, challenge, hasTrustline, balance, load, refreshWallet]);
+  }, [address, challengeId, challenge, hasTrustline, load, refreshWallet]);
 
   const claim = useCallback(async () => {
     if (!address || challengeId === null) return null;
@@ -156,8 +181,7 @@ export function useChallenge(challengeId: number | null) {
   }, [address, challengeId, load]);
 
   const joined = !!me;
-  const isOver =
-    !!challenge && Date.now() / 1000 >= Number(challenge.end_time);
+  const isOver = !!challenge && now >= Number(challenge.end_time);
   const isFinalized = challenge?.status === "Finalized";
   const canClaim = !!me && me.payout > 0n && !me.claimed && isFinalized;
 

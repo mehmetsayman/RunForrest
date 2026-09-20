@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Calendar,
   ChevronRight,
-  Clock,
-  Filter,
   Globe,
   Heart,
   MapPin,
@@ -15,7 +13,6 @@ import {
   Route,
   Search,
   Sparkles,
-  Star,
   Target,
   TrendingUp,
   Trophy,

@@ -46,7 +46,7 @@ function ibanFrom(message?: string): string | null {
 }
 
 export function OffRampSheet({ open, onClose }: Props) {
-  const { address, balance, balanceFormatted, refresh } = useWallet();
+  const { address, balanceFormatted, refresh } = useWallet();
   const ramp = useAnchor(address);
   const [amount, setAmount] = useState("5");
 

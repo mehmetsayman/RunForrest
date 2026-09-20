@@ -67,7 +67,15 @@ export function useBadges(address: string | null) {
     }
   }, [address]);
 
+  /**
+   * Mount'ta ve bağımlılık değiştiğinde zincirden veri çeker.
+   *
+   * Kural setState'i effect içinde görüp uyarıyor; buradaki senkron çağrı
+   * yalnızca "yükleniyor" bayrağı, asıl veri await sonrası yazılıyor.
+   * Dış bir sistemden (Soroban RPC) veri çekmek effect'in tam da amacı.
+   */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

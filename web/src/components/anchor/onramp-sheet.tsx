@@ -81,16 +81,37 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
   const { address, hasTrustline, isActivated, addTrustline, activateAccount, refresh } =
     useWallet();
   const ramp = useAnchor(address);
-  const [amountTry, setAmountTry] = useState("500");
+  const [typedAmount, setTypedAmount] = useState<string | null>(null);
   const [trustBusy, setTrustBusy] = useState(false);
   const [activateBusy, setActivateBusy] = useState(false);
 
-  // Gereken USDC'den kaba bir TRY önerisi üret (kur ~49, %0.5 komisyon payı).
-  useEffect(() => {
-    if (!neededUsdc) return;
-    const suggested = Math.ceil((Number(neededUsdc) * 50) / 50) * 50;
-    setAmountTry(String(Math.max(ANCHOR_LIMITS.minOnrampTry, suggested)));
+  /**
+   * Gereken USDC için önerilen TRY tutarı.
+   *
+   * Prop'tan state'e kopyalamak yerine türetiliyor; kullanıcı bir şey
+   * yazdığı anda onun değeri geçerli olur.
+   *
+   * Paya ihtiyaç var: kur işlem sırasında oynayabilir ve anchor %0.5
+   * komisyon alıyor. Tam denk bir tutar gönderilirse kullanıcı hedeflediği
+   * USDC'nin biraz altında kalır, katılım yine reddedilir ve bu ekrana
+   * geri düşer.
+   */
+  const suggestedTry = useMemo(() => {
+    const STEP = 50; // düzgün bir havale tutarına yuvarla
+    if (!neededUsdc) return String(ANCHOR_LIMITS.minOnrampTry * 10);
+    const APPROX_RATE = 50; // TRY/USDC — bilinçli olarak temkinli
+    const withMargin = Number(neededUsdc) * APPROX_RATE * 1.02;
+    const rounded = Math.ceil(withMargin / STEP) * STEP;
+    return String(
+      Math.min(
+        ANCHOR_LIMITS.maxOnrampTry,
+        Math.max(ANCHOR_LIMITS.minOnrampTry, rounded),
+      ),
+    );
   }, [neededUsdc]);
+
+  const amountTry = typedAmount ?? suggestedTry;
+  const setAmountTry = setTypedAmount;
 
   const amountNum = Number(amountTry);
   const amountValid =
@@ -105,8 +126,11 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
 
   useEffect(() => {
     if (ramp.step === "done") {
-      refresh();
-      onFunded?.();
+      // Önce cüzdanı tazele, sonra çağıranı bilgilendir.
+      (async () => {
+        await refresh();
+        onFunded?.();
+      })();
     }
     // onFunded/refresh kimliği her render değişebilir; adım yeterli tetikleyici.
     // eslint-disable-next-line react-hooks/exhaustive-deps

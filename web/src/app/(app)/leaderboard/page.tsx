@@ -101,7 +101,7 @@ function splitFor(winners: number): number[] {
 /* ─── sayfa ─── */
 
 export default function LeaderboardPage() {
-  const { isConnected, address } = useWallet();
+  const { isConnected } = useWallet();
   const { id, loading: idLoading } = useActiveChallengeId();
   const c = useChallenge(id);
 
