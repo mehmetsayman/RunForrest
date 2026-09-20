@@ -29,7 +29,10 @@ The first run asks a few questions:
 ## Path 2 — GitHub integration (deploys on every push)
 
 1. [vercel.com/new](https://vercel.com/new) → pick the repository
-2. **Root Directory** → set it to `web` ← *skip this and the build fails*
+2. **Root Directory** → set it to `web` ← *skip this and every build fails*
+   (this is a project setting, not something `vercel.json` can carry; a repo
+   connected without it builds at the repository root, finds no app, and marks
+   every commit as failed)
 3. Framework: Next.js (detected automatically)
 4. Enter the environment variables below → Deploy
 
