@@ -74,7 +74,7 @@ async function invoke(
 
   const sent = await server.sendTransaction(prepared);
   if (sent.status === "ERROR") {
-    throw new Error(`${method} reddedildi`);
+    throw new Error(`${method} was rejected by the network`);
   }
 
   const deadline = Date.now() + 45_000;

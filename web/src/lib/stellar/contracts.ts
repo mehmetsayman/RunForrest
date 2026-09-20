@@ -57,7 +57,34 @@ export class ContractError extends Error {
   }
 }
 
-/* ────────────────────────────── temel yollar ───────────────────────────── */
+/**
+ * The reason the network refused a transaction, as readable text.
+ *
+ * `sendTransaction` returning ERROR means the transaction was rejected before
+ * it ever ran, and the reason sits in an XDR result code — `txInsufficientBalance`
+ * when the account cannot cover the fee, `txBadSeq` on a stale sequence number,
+ * `txTooLate` past the time bounds. Showing "rejected" on its own leaves the
+ * user with nothing to act on, so we decode it.
+ */
+function submitFailureReason(errorResult: unknown): string {
+  try {
+    const name = (
+      errorResult as { result(): { switch(): { name: string } } }
+    )?.result?.()?.switch?.()?.name;
+    if (!name) return "the network gave no reason";
+    const explained: Record<string, string> = {
+      txInsufficientBalance: "not enough XLM to cover the transaction fee",
+      txBadSeq: "sequence number out of date — reload and try again",
+      txTooLate: "the transaction expired before it was submitted",
+      txNoAccount: "the source account does not exist on chain yet",
+    };
+    return explained[name] ?? name;
+  } catch {
+    return "the network gave no reason";
+  }
+}
+
+/* ────────────────────────────── core paths ─────────────────────────────── */
 
 /**
  * Read-only call: simulated, nothing is written to chain, no signature asked.
@@ -128,7 +155,19 @@ async function write(
 
   const sent = await server.sendTransaction(signed);
   if (sent.status === "ERROR") {
-    throw new ContractError(`${method} reddedildi`, sent.errorResult);
+    throw new ContractError(
+      `${method} was rejected by the network: ${submitFailureReason(sent.errorResult)}`,
+      sent.errorResult,
+    );
+  }
+  // TRY_AGAIN_LATER means the RPC has not caught up and never will for this
+  // hash. Left to fall through, it waits out the full polling deadline and
+  // reports a timeout, which points the user at the wrong problem.
+  if (sent.status === "TRY_AGAIN_LATER") {
+    throw new ContractError(
+      `${method} could not be submitted: the network is busy, try again in a moment`,
+      sent,
+    );
   }
 
   // Wait until it settles.
