@@ -10,7 +10,7 @@ Rise In × Stellar Pro Hackathon 2026 · **Genesis Track** · Istanbul
 [![Stellar](https://img.shields.io/badge/Stellar-Testnet-fdda24?style=flat-square)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Soroban-SDK_23-fdda24?style=flat-square)](https://developers.stellar.org)
 [![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/tests-23%2F23-4cc38a?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-24%2F24-4cc38a?style=flat-square)](#testing)
 [![Anchor](https://img.shields.io/badge/SEP--1%2F10%2F12%2F38%2F6-live-00c2d7?style=flat-square)](#the-fiat-rail)
 
 </div>
@@ -116,8 +116,9 @@ extension set to **Testnet** (Freighter recommended).
 7. **`/mint`** now shows a real on-chain city badge.
 8. **Profile → "Withdraw to IBAN"** sends USDC back out as lira.
 
-> The interface is in Turkish. The target user is a runner in Istanbul paying in
-> lira, not a crypto-native reading English docs — that choice is the product.
+> The interface is in English; the money is in lira. The target user is a runner
+> in Istanbul who pays a 500 ₺ entry and cashes out to a Turkish IBAN — the
+> localisation that matters here is the rail, not the copy.
 
 ---
 
@@ -395,10 +396,10 @@ accuracy handling, map tile licensing — are in
 ## Testing
 
 ```
-runforrest-challenge   13 tests
+runforrest-challenge   14 tests
 runforrest-badge       10 tests
                   ─────────
-                  23 passed
+                  24 passed
 ```
 
 The challenge suite runs against a **mock vault that reproduces the real vault's
@@ -455,7 +456,7 @@ in the Supabase SQL editor and fill the two `NEXT_PUBLIC_SUPABASE_*` values;
 
 ```bash
 cd contracts
-cargo test                                        # 23 tests
+cargo test                                        # 24 tests
 cargo build --target wasm32v1-none --release
 stellar contract optimize --wasm <path>.wasm
 stellar contract deploy --wasm <path>.optimized.wasm \
@@ -517,7 +518,7 @@ development:
 ## Roadmap
 
 **Immediate**
-- Deploy the frontend publicly and onboard a running club in Istanbul
+- Onboard a running club in Istanbul and run a real challenge end to end
 - Move admin keys behind a multisig
 - Point at a production Turkish anchor — one configuration value
 
