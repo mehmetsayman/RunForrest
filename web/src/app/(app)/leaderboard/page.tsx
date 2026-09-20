@@ -37,7 +37,7 @@ import { OnRampSheet } from "@/components/anchor/onramp-sheet";
 import { OffRampSheet } from "@/components/anchor/offramp-sheet";
 import { useWallet, truncate } from "@/components/wallet/wallet-provider";
 import { useActiveChallengeId, useChallenge } from "@/hooks/use-challenge";
-import { fromStroops } from "@/lib/stellar/contracts";
+import { fromStroops, fundTestnetAccount } from "@/lib/stellar/contracts";
 import { explorerContract, explorerTx, RUNFORREST_VAULT_ID } from "@/lib/stellar/config";
 import { cn } from "@/lib/utils";
 
@@ -101,7 +101,7 @@ function splitFor(winners: number): number[] {
 /* ─── page ─── */
 
 export default function LeaderboardPage() {
-  const { isConnected } = useWallet();
+  const { isConnected, address, refresh } = useWallet();
   const { id, loading: idLoading } = useActiveChallengeId();
   const c = useChallenge(id);
 
@@ -109,14 +109,23 @@ export default function LeaderboardPage() {
   const [rampOpen, setRampOpen] = useState(false);
   const [needed, setNeeded] = useState<string | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
+  /** Set when the wallet holds USDC but no XLM to pay the network fee. */
+  const [lowXlm, setLowXlm] = useState<number | null>(null);
+  const [fundingXlm, setFundingXlm] = useState(false);
   const [cashOutOpen, setCashOutOpen] = useState(false);
 
   const countdown = useCountdown(c.challenge?.end_time);
 
   const handleJoin = useCallback(async () => {
     setNotice(null);
+    setLowXlm(null);
     const res = await c.join();
     if (res.ok) return;
+
+    if ("needsXlm" in res) {
+      setLowXlm(res.xlm);
+      return;
+    }
 
     if ("needsTrustline" in res) {
       setNeeded(undefined);
@@ -335,6 +344,53 @@ export default function LeaderboardPage() {
               >
                 {c.lastHash}
               </a>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Enough USDC, no XLM for the fee. Separated from the error notice
+          because it is not a dead end: on testnet Friendbot fixes it in one tap. */}
+      {lowXlm !== null && (
+        <GlassCard className="border-amber-500/20 p-4">
+          <div className="flex gap-2">
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-amber-300">
+                Not enough XLM for the network fee
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                Your wallet holds {lowXlm.toFixed(4)} XLM. A contract call costs
+                around 0.2 XLM, which is paid separately from the entry fee.
+              </p>
+              <button
+                type="button"
+                disabled={fundingXlm || !address}
+                onClick={async () => {
+                  if (!address) return;
+                  setFundingXlm(true);
+                  try {
+                    await fundTestnetAccount(address);
+                    setLowXlm(null);
+                    await refresh();
+                    await handleJoin();
+                  } catch (e) {
+                    setNotice((e as Error).message);
+                  } finally {
+                    setFundingXlm(false);
+                  }
+                }}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1.5 text-[11px] font-medium text-amber-300 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
+              >
+                {fundingXlm ? (
+                  <>
+                    <Loader2 className="size-3 animate-spin" />
+                    Requesting…
+                  </>
+                ) : (
+                  "Get testnet XLM"
+                )}
+              </button>
             </div>
           </div>
         </GlassCard>

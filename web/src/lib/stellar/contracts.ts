@@ -390,7 +390,44 @@ export async function accountExists(address: string): Promise<boolean> {
 }
 
 /**
- * Activates a testnet account via Friendbot.
+ * The account's native XLM balance, as a number.
+ *
+ * Every contract call is paid for in XLM, and a Soroban call is not cheap:
+ * joining a challenge simulates at roughly 0.2 XLM in resource fees. An account
+ * topped up with USDC through the anchor can easily hold none, in which case the
+ * network rejects the transaction outright with txInsufficientBalance. Checking
+ * first turns that into something the UI can offer to fix.
+ *
+ * Returns 0 for an account that does not exist yet.
+ */
+export async function xlmBalance(address: string): Promise<number> {
+  try {
+    const account = await horizon.loadAccount(address);
+    const native = account.balances.find((b) => b.asset_type === "native");
+    return native ? Number(native.balance) : 0;
+  } catch (e) {
+    const status = (e as { response?: { status?: number } })?.response?.status;
+    if (status === 404) return 0;
+    throw new ContractError(
+      `Could not read XLM balance: ${(e as Error).message}`,
+      e,
+    );
+  }
+}
+
+/**
+ * The XLM a contract call needs to be worth attempting.
+ *
+ * `join` measures at about 0.21 XLM on testnet. The margin covers the base
+ * reserve movements and leaves room for a second call afterwards.
+ */
+export const MIN_XLM_FOR_FEES = 1;
+
+/**
+ * Funds a testnet account via Friendbot.
+ *
+ * This both activates a new account and tops up an existing one — Friendbot
+ * answers 200 and sends 10,000 XLM either way.
  *
  * Testnet only. On mainnet another account funds it; in a real product this
  * step is replaced by sponsored account creation, so the user never has to
@@ -401,7 +438,7 @@ export async function fundTestnetAccount(address: string): Promise<void> {
     `https://friendbot.stellar.org?addr=${encodeURIComponent(address)}`,
   );
   if (!res.ok && res.status !== 400) {
-    throw new ContractError(`Could not activate the account (Friendbot ${res.status})`);
+    throw new ContractError(`Friendbot could not fund the account (${res.status})`);
   }
   // A 400 usually means "already exists" — not a problem.
 }

@@ -16,6 +16,8 @@ import {
   challenges,
   fromStroops,
   usdcBalance,
+  xlmBalance,
+  MIN_XLM_FOR_FEES,
   type Challenge,
   type Participant,
 } from "@/lib/stellar/contracts";
@@ -34,6 +36,7 @@ export type JoinOutcome =
   | { ok: true; hash: string }
   | { ok: false; needsFunding: true; shortfall: string }
   | { ok: false; needsTrustline: true }
+  | { ok: false; needsXlm: true; xlm: number }
   | { ok: false; error: string };
 
 export function useChallenge(challengeId: number | null) {
@@ -127,6 +130,15 @@ export function useChallenge(challengeId: number | null) {
         needsFunding: true,
         shortfall: fromStroops(challenge.entry_fee - live),
       };
+    }
+
+    // The fee is paid in XLM, not USDC. An account funded only through the
+    // anchor holds none, and the network then rejects the transaction before
+    // the contract ever runs. Caught here, the UI can offer Friendbot instead
+    // of showing a raw rejection.
+    const xlm = await xlmBalance(address);
+    if (xlm < MIN_XLM_FOR_FEES) {
+      return { ok: false, needsXlm: true, xlm };
     }
 
     setBusy(true);
