@@ -15,6 +15,13 @@ Rise In × Stellar Pro Hackathon 2026 · **Genesis Track** · Istanbul
 
 </div>
 
+**Jump to:** [The problem](#the-problem) · [What it does](#what-runforrest-does) ·
+[Screenshots](#what-it-looks-like) · [Deployed contracts](#live-on-stellar-testnet) ·
+[Try it](#try-it) · [Architecture](#architecture) · [How it works](#how-the-pieces-work) ·
+[Design decisions](#design-decisions) · [Trust assumptions](#trust-assumptions) ·
+[Bugs the chain caught](#two-bugs-the-live-chain-caught) · [Testing](#testing) ·
+[Run it locally](#getting-started) · [Roadmap](#roadmap)
+
 ---
 
 ## The problem
@@ -64,6 +71,39 @@ The hard part of consumer crypto in Turkey is not the chain — it is the last m
 to a bank account. The ramp code here is not app-specific; it is the standard SEP
 flow, and it moves to production by swapping a domain. Any Turkish consumer app
 facing the same wall can reuse this shape.
+
+---
+
+## What it looks like
+
+<div align="center">
+  <img src="docs/screenshots/landing.png" alt="RunForrest landing page" width="100%" />
+</div>
+
+The app is mobile-first — a runner uses it with one hand, outdoors, mid-run.
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/dashboard.png" alt="Dashboard" /></td>
+<td width="33%"><img src="docs/screenshots/run.png" alt="Live GPS run tracking" /></td>
+<td width="33%"><img src="docs/screenshots/leaderboard.png" alt="Challenge leaderboard" /></td>
+</tr>
+<tr>
+<td align="center"><b>Dashboard</b><br/><sub>Verified distance, runs and cities, all read from contract state. Nothing here is a placeholder — with no data it says so.</sub></td>
+<td align="center"><b>Live run</b><br/><sub>GPS tracking with the accuracy circle drawn on the map. Poor readings still show a position but do not count toward distance.</sub></td>
+<td align="center"><b>Leaderboard</b><br/><sub>Pool, roster and distances read from chain. The pool links to the DeFindex vault holding it, so the claim is checkable.</sub></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/badges.png" alt="Soulbound city badges" /></td>
+<td width="33%"><img src="docs/screenshots/profile.png" alt="Profile" /></td>
+<td width="33%"><img src="docs/screenshots/community.png" alt="Community and challenge creation" /></td>
+</tr>
+<tr>
+<td align="center"><b>City badges</b><br/><sub>Soulbound, tiered by run count. The contract has no transfer function, so the badge cannot be bought.</sub></td>
+<td align="center"><b>Profile</b><br/><sub>Every statistic derived from chain state, plus the two fiat actions: top up with lira, withdraw to an IBAN.</sub></td>
+<td align="center"><b>Community</b><br/><sub>Challenges are created on chain from here; the entry fee and window are contract state, the title is cosmetic metadata.</sub></td>
+</tr>
+</table>
 
 ---
 

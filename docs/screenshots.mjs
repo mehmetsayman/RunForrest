@@ -14,7 +14,6 @@ const PHONE = [
   { path: "/mint", file: "badges.png", h: 1050 },
   { path: "/profile", file: "profile.png", h: 1350 },
   { path: "/community", file: "community.png", h: 1350 },
-  { path: "/community/stellar-marathon-club", file: "club.png", h: 1350 },
 ];
 
 const browser = await chromium.launch();
