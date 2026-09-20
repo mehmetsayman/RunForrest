@@ -360,8 +360,9 @@ export default function LeaderboardPage() {
                 Not enough XLM for the network fee
               </p>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                Your wallet holds {lowXlm.toFixed(4)} XLM. A contract call costs
-                around 0.2 XLM, which is paid separately from the entry fee.
+                Your wallet has {lowXlm.toFixed(4)} XLM free to spend. A contract
+                call costs around 0.2 XLM, paid separately from the entry fee —
+                and Stellar locks 1.5 XLM away as the account reserve.
               </p>
               <button
                 type="button"

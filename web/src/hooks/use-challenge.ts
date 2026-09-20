@@ -16,7 +16,7 @@ import {
   challenges,
   fromStroops,
   usdcBalance,
-  xlmBalance,
+  spendableXlm,
   MIN_XLM_FOR_FEES,
   type Challenge,
   type Participant,
@@ -135,8 +135,9 @@ export function useChallenge(challengeId: number | null) {
     // The fee is paid in XLM, not USDC. An account funded only through the
     // anchor holds none, and the network then rejects the transaction before
     // the contract ever runs. Caught here, the UI can offer Friendbot instead
-    // of showing a raw rejection.
-    const xlm = await xlmBalance(address);
+    // of showing a raw rejection. Spendable, not total: the minimum reserve is
+    // locked away and cannot pay a fee.
+    const xlm = await spendableXlm(address);
     if (xlm < MIN_XLM_FOR_FEES) {
       return { ok: false, needsXlm: true, xlm };
     }

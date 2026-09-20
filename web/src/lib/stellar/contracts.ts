@@ -390,21 +390,31 @@ export async function accountExists(address: string): Promise<boolean> {
 }
 
 /**
- * The account's native XLM balance, as a number.
+ * The XLM an account can actually spend on fees.
  *
- * Every contract call is paid for in XLM, and a Soroban call is not cheap:
- * joining a challenge simulates at roughly 0.2 XLM in resource fees. An account
- * topped up with USDC through the anchor can easily hold none, in which case the
- * network rejects the transaction outright with txInsufficientBalance. Checking
- * first turns that into something the UI can offer to fix.
+ * Not the same as its balance. Stellar locks a minimum reserve away —
+ * `(2 + subentries + sponsoring - sponsored) × 0.5 XLM` — and a wallet with a
+ * USDC trustline has one subentry, so 1.5 XLM of whatever it holds is untouchable.
+ * Offers reserve more on top through selling liabilities.
+ *
+ * Reading the raw balance instead is the mistake that made the first version of
+ * this check useless: an account holding 1.6 XLM looks funded and has 0.1 to
+ * spend, so the guard passes and the network still refuses the transaction.
  *
  * Returns 0 for an account that does not exist yet.
  */
-export async function xlmBalance(address: string): Promise<number> {
+export async function spendableXlm(address: string): Promise<number> {
   try {
     const account = await horizon.loadAccount(address);
     const native = account.balances.find((b) => b.asset_type === "native");
-    return native ? Number(native.balance) : 0;
+    if (!native) return 0;
+
+    const subentries =
+      account.subentry_count + account.num_sponsoring - account.num_sponsored;
+    const reserve = (2 + subentries) * 0.5;
+    const locked = reserve + Number(native.selling_liabilities ?? 0);
+
+    return Math.max(0, Number(native.balance) - locked);
   } catch (e) {
     const status = (e as { response?: { status?: number } })?.response?.status;
     if (status === 404) return 0;
@@ -416,12 +426,12 @@ export async function xlmBalance(address: string): Promise<number> {
 }
 
 /**
- * The XLM a contract call needs to be worth attempting.
+ * Spendable XLM a contract call needs to be worth attempting.
  *
- * `join` measures at about 0.21 XLM on testnet. The margin covers the base
- * reserve movements and leaves room for a second call afterwards.
+ * `join` measures at about 0.21 XLM on testnet. The margin leaves room for the
+ * fee to move with network load and for a claim afterwards.
  */
-export const MIN_XLM_FOR_FEES = 1;
+export const MIN_XLM_FOR_FEES = 0.5;
 
 /**
  * Funds a testnet account via Friendbot.
