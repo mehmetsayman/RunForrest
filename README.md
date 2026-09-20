@@ -37,7 +37,7 @@ Everything the hackathon asks for, and where to find it.
 | Working live demo | the URL above is functional and public — [60-second path](#try-it) |
 | Documented contract IDs and artifacts | [below](#live-on-stellar-testnet), plus [`deployments.json`](deployments.json) |
 | Built with the Soroban SDK | `soroban-sdk` 23, [`contracts/`](contracts/) |
-| Pitch presentation | [`RunForrest-Pitch.pptx`](RunForrest-Pitch.pptx) — the official template, filled, structure intact |
+| Pitch presentation | **[View the deck](https://www.canva.com/design/DAHVuMiqFXI/eNNRwCmvZ577qQMFaC12jg/view)** — the official template, filled, structure intact · [`.pptx`](RunForrest-Pitch.pptx) |
 | Track | **Genesis** |
 
 **The narrative in one paragraph.** Runners in Turkey have no verifiable path
