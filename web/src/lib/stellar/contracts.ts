@@ -57,31 +57,54 @@ export class ContractError extends Error {
   }
 }
 
+/** Transaction result codes, in the words of someone who has to fix it. */
+const SUBMIT_FAILURE: Record<string, string> = {
+  txInsufficientBalance:
+    "not enough XLM to cover the network fee — a contract call costs around 0.2 XLM",
+  txInsufficientFee: "the offered fee was below the network minimum",
+  txBadSeq: "sequence number out of date — reload the page and try again",
+  txTooLate: "the transaction expired before it reached the network",
+  txTooEarly: "the transaction was submitted before its valid-from time",
+  txNoAccount: "the source account does not exist on chain yet",
+  txBadAuth:
+    "the signature did not check out — is the wallet on Testnet rather than Mainnet?",
+  txMalformed: "the network considered the transaction malformed",
+  txFailed: "an operation inside the transaction failed",
+};
+
 /**
  * The reason the network refused a transaction, as readable text.
  *
  * `sendTransaction` returning ERROR means the transaction was rejected before
- * it ever ran, and the reason sits in an XDR result code — `txInsufficientBalance`
- * when the account cannot cover the fee, `txBadSeq` on a stale sequence number,
- * `txTooLate` past the time bounds. Showing "rejected" on its own leaves the
- * user with nothing to act on, so we decode it.
+ * it ever ran, and the reason is an XDR result code on the response.
+ *
+ * The accessor has moved between SDK versions: it used to be the method chain
+ * `result().switch().name`, and in v17 it is the plain property `result.type`.
+ * Reading it the old way throws, the catch swallows it, and the user is told
+ * "the network gave no reason" — which is how this went unnoticed. Both shapes
+ * are read now, and an unrecognised code is passed through verbatim rather than
+ * hidden, since a raw code name is still something to search for.
  */
 function submitFailureReason(errorResult: unknown): string {
-  try {
-    const name = (
-      errorResult as { result(): { switch(): { name: string } } }
-    )?.result?.()?.switch?.()?.name;
-    if (!name) return "the network gave no reason";
-    const explained: Record<string, string> = {
-      txInsufficientBalance: "not enough XLM to cover the transaction fee",
-      txBadSeq: "sequence number out of date — reload and try again",
-      txTooLate: "the transaction expired before it was submitted",
-      txNoAccount: "the source account does not exist on chain yet",
-    };
-    return explained[name] ?? name;
-  } catch {
-    return "the network gave no reason";
+  const r = (errorResult as { result?: unknown })?.result;
+  let code: string | undefined;
+
+  // v17 and later: a property holding the union arm name.
+  code = (r as { type?: string })?.type;
+
+  // Older SDKs: a method chain ending in an enum with a name.
+  if (!code && typeof r === "function") {
+    try {
+      code = (
+        errorResult as { result(): { switch(): { name: string } } }
+      ).result().switch().name;
+    } catch {
+      /* not this shape either */
+    }
   }
+
+  if (!code) return "the network gave no reason";
+  return SUBMIT_FAILURE[code] ?? code;
 }
 
 /* ────────────────────────────── core paths ─────────────────────────────── */
