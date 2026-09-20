@@ -15,12 +15,39 @@ Rise In × Stellar Pro Hackathon 2026 · **Genesis Track** · Istanbul
 
 </div>
 
-**Jump to:** [The problem](#the-problem) · [What it does](#what-runforrest-does) ·
+**Jump to:** [Submission checklist](#submission-at-a-glance) · [The problem](#the-problem) · [What it does](#what-runforrest-does) ·
 [Screenshots](#what-it-looks-like) · [Deployed contracts](#live-on-stellar-testnet) ·
 [Try it](#try-it) · [Architecture](#architecture) · [How it works](#how-the-pieces-work) ·
 [Design decisions](#design-decisions) · [Trust assumptions](#trust-assumptions) ·
 [Bugs the chain caught](#two-bugs-the-live-chain-caught) · [Testing](#testing) ·
 [Run it locally](#getting-started) · [Roadmap](#roadmap)
+
+---
+
+## Submission at a glance
+
+Everything the hackathon asks for, and where to find it.
+
+| Requirement | Where |
+|---|---|
+| Public GitHub repository | you are in it |
+| Well-structured README | this file — technical documentation lives here, as the brief allows |
+| Smart contracts on Stellar Testnet | [three contracts, with IDs and WASM hashes](#live-on-stellar-testnet) |
+| Front-end / application URL | **[runforrest.vercel.app](https://runforrest.vercel.app)** |
+| Working live demo | the URL above is functional and public — [60-second path](#try-it) |
+| Documented contract IDs and artifacts | [below](#live-on-stellar-testnet), plus [`deployments.json`](deployments.json) |
+| Built with the Soroban SDK | `soroban-sdk` 23, [`contracts/`](contracts/) |
+| Pitch presentation | [`RunForrest-Pitch.pptx`](RunForrest-Pitch.pptx) — the official template, filled, structure intact |
+| Track | **Genesis** |
+
+**The narrative in one paragraph.** Runners in Turkey have no verifiable path
+between a bank account and a prize pool. RunForrest makes the pool a contract
+instead of a promise, and the on-ramp a bank transfer instead of an exchange
+account. A runner pays a 500 ₺ entry from their own bank, runs, and cashes
+winnings out to their IBAN — without ever buying crypto, and without trusting an
+organiser to hold the money honestly. The [problem](#the-problem),
+[who it is for](#who-it-is-for) and [why it generalises](#why-it-generalises) are
+below in full.
 
 ---
 
@@ -124,7 +151,17 @@ The app is mobile-first — a runner uses it with one hand, outdoors, mid-run.
 | USDC Stellar Asset Contract | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
 | DeFindex factory | `CDSCWE4GLNBYYTES2OCYDFQA2LLY4RBIAX6ZI32VSUXD7GO6HRPO4A32` |
 
+**Deployed artifacts.** The WASM hash is what the network actually executes — it
+is the thing to check, not the contract ID, which only points at it.
+
+| Contract | WASM hash |
+|---|---|
+| `runforrest_challenge` | `ea45ccf927aac8031d9c843e727848ec81230f17a05757e1bc662785d6a41cd5` |
+| `runforrest_badge` | `95a8c8fb8249e382f301884507bfa75de912d56acca7d62d44ccd4a0790c5727` |
+| Prize vault (DeFindex) | `f345228dca59c6605789620e9ec62ff4847a0927c33dac7581a955fe746016be` |
+
 Machine-readable: [`deployments.json`](deployments.json)
+
 
 ---
 
