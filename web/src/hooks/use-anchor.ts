@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * TRY ⇄ USDC ramp akışı.
+ * TRY ⇄ USDC ramp flow.
  *
- * Anchor SEP-6 konuşuyor (SEP-24 değil), yani arayüz bize ait. Bu hook akışı
- * adım adım sürüyor ve her adımı UI'a açıyor; kullanıcı parasının nerede
- * olduğunu her an görüyor.
+ * The anchor speaks SEP-6, not SEP-24, so the interface is ours. This hook
+ * drives the flow step by step and exposes every step to the UI, so the user
+ * can always see where their money is.
  *
- * On-ramp:  kur kilitle → IBAN + referans kodu al → havale → USDC cüzdana
- * Off-ramp: kur kilitle → hazine adresi + memo al → USDC gönder → TRY IBAN'a
+ * Deposit:    lock rate → get IBAN + reference code → transfer → USDC lands
+ * Withdrawal: lock rate → get treasury address + memo → send USDC → TRY to IBAN
  *
  * Referans skill: CheesecakeLabs/stellar-anchor-skill/SKILL.md
  */
@@ -75,11 +75,11 @@ export function useAnchor(address: string | null) {
   }, []);
 
   /**
-   * SEP-10 oturumu. Token ~24 saat geçerli, bu yüzden bir kez alıp saklıyoruz;
-   * her ramp adımında kullanıcıya imza penceresi açılmıyor.
+   * SEP-10 session. The token is valid for ~24 hours, so we fetch it once and
+   * cache it, rather than prompting for a signature at every ramp step.
    */
   const session = useCallback(async (): Promise<string> => {
-    if (!address) throw new Error("Önce cüzdanı bağlayın");
+    if (!address) throw new Error("Connect your wallet first");
     if (jwtRef.current) return jwtRef.current;
 
     patch({ step: "authenticating", error: null });
@@ -92,8 +92,8 @@ export function useAnchor(address: string | null) {
   /* ─────────────────────────── ON-RAMP ─────────────────────────── */
 
   /**
-   * TRY yatırımı başlatır. Dönüşte kullanıcıya IBAN ve açıklamaya yazacağı
-   * referans kodu gösterilir; para gelince USDC otomatik düşer.
+   * Starts a TRY deposit. It returns the IBAN and the reference code the user
+   * must put in the transfer; USDC arrives automatically once the money lands.
    */
   const startOnRamp = useCallback(
     async (amountTry: string) => {
@@ -123,15 +123,15 @@ export function useAnchor(address: string | null) {
   );
 
   /**
-   * Havalenin geldiğini anchor'a bildirir ve USDC düşene kadar takip eder.
+   * Tells the anchor the transfer arrived and tracks it until USDC lands.
    *
-   * SANDBOX: gerçek bir anchor'da bu adım yok — parayı kullanıcının bankası
-   * gönderir ve anchor kendi tespit eder. Burada jürinin gerçek havale
-   * beklemesini engellemek için var.
+   * SANDBOX: a real anchor has no such step — the user's bank sends the money
+   * and the anchor detects it. This exists so a reviewer does not have to make
+   * an actual bank transfer.
    */
   const confirmBankTransfer = useCallback(async () => {
     const { deposit, quote } = state;
-    if (!deposit) throw new Error("Önce yatırma işlemi başlatılmalı");
+    if (!deposit) throw new Error("Start the deposit first");
     const jwt = jwtRef.current!;
 
     try {
@@ -148,7 +148,7 @@ export function useAnchor(address: string | null) {
 
       patch({ step: done.status === "completed" ? "done" : "error", tx: done });
       if (done.status !== "completed") {
-        patch({ error: done.message ?? "Yatırma tamamlanamadı" });
+        patch({ error: done.message ?? "Deposit could not be completed" });
       }
       return done;
     } catch (e) {
@@ -160,8 +160,8 @@ export function useAnchor(address: string | null) {
   /* ─────────────────────────── OFF-RAMP ────────────────────────── */
 
   /**
-   * USDC çekimi başlatır. Dönüşte hazine adresi + memo gelir; kullanıcı
-   * ödemeyi bu memo ile gönderir, anchor eşleştirip TRY'yi IBAN'a öder.
+   * Starts a USDC withdrawal. It returns a treasury address and a memo; the
+   * payment is sent with that memo and the anchor pays out TRY to the IBAN.
    */
   const startOffRamp = useCallback(
     async (amountUsdc: string) => {
@@ -190,14 +190,14 @@ export function useAnchor(address: string | null) {
   );
 
   /**
-   * USDC'yi anchor hazinesine memo ile gönderir, sonra TRY ödemesini takip eder.
-   * memo_type "id" — metin memo ile gönderilirse anchor eşleştiremez.
+   * Sends USDC to the anchor's treasury with the memo, then tracks the payout.
+   * memo_type is "id" — sent as a text memo, the anchor cannot match it.
    */
   const sendWithdrawPayment = useCallback(
     async (amountUsdc: string) => {
       const { withdraw } = state;
-      if (!withdraw) throw new Error("Önce çekme işlemi başlatılmalı");
-      if (!address) throw new Error("Cüzdan bağlı değil");
+      if (!withdraw) throw new Error("Start the withdrawal first");
+      if (!address) throw new Error("Wallet not connected");
       const jwt = jwtRef.current!;
 
       try {
@@ -253,7 +253,7 @@ export function useAnchor(address: string | null) {
     [address, state],
   );
 
-  /** Açık bir işlemin durumunu tek seferlik tazeler. */
+  /** Refreshes the status of an open transaction once. */
   const refreshTx = useCallback(async (id: string) => {
     const jwt = jwtRef.current;
     if (!jwt) return null;

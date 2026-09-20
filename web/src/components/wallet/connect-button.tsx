@@ -58,7 +58,7 @@ export function ConnectButton({
     try {
       await activateAccount();
     } catch {
-      /* hata context'te tutuluyor */
+      /* the error is held in context */
     } finally {
       setActivateBusy(false);
     }
@@ -69,16 +69,16 @@ export function ConnectButton({
     try {
       await addTrustline();
     } catch {
-      /* hata cüzdan sağlayıcısında gösterildi */
+      /* the error is surfaced by the wallet provider */
     } finally {
       setTrustBusy(false);
     }
   }
 
-  /* ─── bağlı değil ─── */
+  /* ─── not connected ─── */
 
   if (!isConnected) {
-    const label = isConnecting ? "Bağlanıyor…" : "Cüzdan Bağla";
+    const label = isConnecting ? "Connecting…" : "Connect Wallet";
 
     if (variant === "hero") {
       return (
@@ -117,7 +117,7 @@ export function ConnectButton({
           ) : (
             <Wallet className="size-3.5" />
           )}
-          {isConnecting ? "…" : "Bağla"}
+          {isConnecting ? "…" : "Connect"}
         </button>
       );
     }
@@ -142,7 +142,7 @@ export function ConnectButton({
     );
   }
 
-  /* ─── bağlı ─── */
+  /* ─── connected ─── */
 
   return (
     <div className="relative">
@@ -189,7 +189,7 @@ export function ConnectButton({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-mono text-xs">{displayAddress}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {isActivated ? "Stellar Testnet" : "Hesap açılmamış"}
+                      {isActivated ? "Stellar Testnet" : "Account not activated"}
                     </p>
                   </div>
                 </div>
@@ -203,9 +203,9 @@ export function ConnectButton({
                   </p>
                 </div>
 
-                {/* Stellar'da hesap, minimum XLM rezervini alana kadar VAR
-                    OLMAZ. Yeni bir cüzdan bağlandığında ilk adım budur;
-                    atlanırsa trustline "Not Found" ile patlar. */}
+                {/* On Stellar an account DOES NOT EXIST until it holds the minimum
+                    XLM reserve. This is the first step for any freshly created
+                    wallet; skip it and the trustline fails with "Not Found". */}
                 {!isActivated && (
                   <button
                     type="button"
@@ -218,12 +218,12 @@ export function ConnectButton({
                     ) : (
                       <Sparkles className="size-3.5" />
                     )}
-                    {activateBusy ? "Açılıyor…" : "Hesabını etkinleştir"}
+                    {activateBusy ? "Activating…" : "Activate your account"}
                   </button>
                 )}
 
-                {/* Trustline, Stellar'a özgü ikinci ön koşul: olmadan anchor
-                    USDC'yi gönderemez, deposit pending_trust'ta bekler. */}
+                {/* The trustline is the second Stellar-specific prerequisite: without
+                    it the anchor cannot send USDC and the deposit waits in pending_trust. */}
                 {isActivated && !hasTrustline && (
                   <button
                     type="button"
@@ -236,7 +236,7 @@ export function ConnectButton({
                     ) : (
                       <ShieldPlus className="size-3.5" />
                     )}
-                    {trustBusy ? "Açılıyor…" : "USDC'yi etkinleştir"}
+                    {trustBusy ? "Enabling…" : "Enable USDC"}
                   </button>
                 )}
               </div>
@@ -255,7 +255,7 @@ export function ConnectButton({
                   ) : (
                     <Copy className="size-3.5 text-muted-foreground" />
                   )}
-                  <span>{copied ? "Kopyalandı" : "Adresi kopyala"}</span>
+                  <span>{copied ? "Copied" : "Copy address"}</span>
                 </button>
 
                 <a
@@ -266,7 +266,7 @@ export function ConnectButton({
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs transition-colors hover:bg-white/[0.06]"
                 >
                   <ExternalLink className="size-3.5 text-muted-foreground" />
-                  <span>Explorer&apos;da gör</span>
+                  <span>View on Explorer</span>
                 </a>
 
                 <button
@@ -278,7 +278,7 @@ export function ConnectButton({
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs text-red-400 transition-colors hover:bg-red-500/10"
                 >
                   <LogOut className="size-3.5" />
-                  <span>Bağlantıyı kes</span>
+                  <span>Disconnect</span>
                 </button>
               </div>
             </GlassCard>

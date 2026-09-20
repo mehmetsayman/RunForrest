@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Leaderboard — tamamı zincirden.
+ * Leaderboard — entirely on-chain.
  *
- * Katılımcılar `get_roster`'dan, mesafeler `get_participant`'tan, havuz ise
- * DeFindex vault'undaki gerçek bakiyeden okunuyor. Sayfadaki hiçbir sayı
- * uygulamanın kendi kaydından gelmiyor.
+ * Participants come from `get_roster`, distances from `get_participant`, and
+ * the pool from the real balance held in the DeFindex vault. Not a single
+ * number on this page comes from the app's own records.
  *
- * Katılım anında USDC yetmiyorsa akış kırılmıyor — TRY yükleme ekranı
- * aynı yerde açılıyor ve para gelince katılım kaldığı yerden devam ediyor.
+ * If a runner lacks USDC at the moment of joining, the flow does not break:
+ * the fiat deposit sheet opens in place and the join resumes once funds land.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -41,7 +41,7 @@ import { fromStroops } from "@/lib/stellar/contracts";
 import { explorerContract, explorerTx, RUNFORREST_VAULT_ID } from "@/lib/stellar/config";
 import { cn } from "@/lib/utils";
 
-/* ─── yardımcılar ─── */
+/* ─── helpers ─── */
 
 const km = (meters: number) => (meters / 1000).toFixed(2);
 
@@ -51,11 +51,11 @@ function useCountdown(endTime?: bigint) {
     if (!endTime) return;
     const tick = () => {
       const s = Number(endTime) - Math.floor(Date.now() / 1000);
-      if (s <= 0) return setLeft("bitti");
+      if (s <= 0) return setLeft("ended");
       const d = Math.floor(s / 86400);
       const h = Math.floor((s % 86400) / 3600);
       const m = Math.floor((s % 3600) / 60);
-      setLeft(d > 0 ? `${d}g ${h}s` : h > 0 ? `${h}s ${m}dk` : `${m}dk`);
+      setLeft(d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`);
     };
     tick();
     const i = setInterval(tick, 30_000);
@@ -90,7 +90,7 @@ function RankDisplay({ rank }: { rank: number }) {
   );
 }
 
-/** Kontratın dağıtım kuralı: 3+ kazanan 50/30/20, 2 kazanan 60/40, tek %100. */
+/** The contract's split: 50/30/20 for 3+ winners, 60/40 for two, 100% for one. */
 function splitFor(winners: number): number[] {
   if (winners <= 0) return [];
   if (winners === 1) return [100];
@@ -98,7 +98,7 @@ function splitFor(winners: number): number[] {
   return [50, 30, 20];
 }
 
-/* ─── sayfa ─── */
+/* ─── page ─── */
 
 export default function LeaderboardPage() {
   const { isConnected } = useWallet();
@@ -120,7 +120,7 @@ export default function LeaderboardPage() {
 
     if ("needsTrustline" in res) {
       setNeeded(undefined);
-      setRampOpen(true); // ramp ekranı trustline adımını da içeriyor
+      setRampOpen(true); // the deposit sheet covers the trustline step too
       return;
     }
     if ("needsFunding" in res) {
@@ -131,12 +131,12 @@ export default function LeaderboardPage() {
     setNotice(res.error);
   }, [c]);
 
-  /* ─── yükleniyor / yarışma yok ─── */
+  /* ─── loading / no challenge ─── */
 
   if (idLoading || c.loading) {
     return (
       <MobileContainer withNav className="space-y-5 pb-6 pt-6">
-        <PageHeader title="Sıralama" subtitle="Yükleniyor…" />
+        <PageHeader title="Leaderboard" subtitle="Loading…" />
         <GlassCard className="flex items-center justify-center p-10">
           <Loader2 className="size-6 animate-spin text-primary" />
         </GlassCard>
@@ -147,12 +147,12 @@ export default function LeaderboardPage() {
   if (id === null || !c.challenge) {
     return (
       <MobileContainer withNav className="space-y-5 pb-6 pt-6">
-        <PageHeader title="Sıralama" subtitle="Aktif yarışma yok" />
+        <PageHeader title="Leaderboard" subtitle="No active challenge" />
         <GlassCard className="p-6 text-center">
           <Trophy className="mx-auto size-8 text-muted-foreground" />
-          <p className="mt-3 text-sm">Şu an açık bir yarışma bulunmuyor.</p>
+          <p className="mt-3 text-sm">No challenge is open right now.</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Topluluk sekmesinden yeni bir yarışma başlatabilirsin.
+            You can start one from the Community tab.
           </p>
         </GlassCard>
       </MobileContainer>
@@ -173,8 +173,8 @@ export default function LeaderboardPage() {
   return (
     <MobileContainer withNav className="space-y-5 pb-6 pt-6">
       <PageHeader
-        title="Sıralama"
-        subtitle={`Yarışma #${id} · Stellar Testnet`}
+        title="Leaderboard"
+        subtitle={`Challenge #${id} · Stellar Testnet`}
         action={
           <Badge
             className={cn(
@@ -190,12 +190,12 @@ export default function LeaderboardPage() {
                 c.isFinalized ? "bg-muted-foreground" : "bg-red-400",
               )}
             />
-            {c.isFinalized ? "BİTTİ" : "CANLI"}
+            {c.isFinalized ? "ENDED" : "LIVE"}
           </Badge>
         }
       />
 
-      {/* ─── ÖDÜL HAVUZU ─── */}
+      {/* ─── PRIZE POOL ─── */}
       <GlassCard strong glow className="relative overflow-hidden p-5">
         <div className="absolute -right-10 -top-10 size-40 rounded-full bg-primary/15 blur-[60px]" />
         <div className="absolute -bottom-10 -left-10 size-32 rounded-full bg-amber-500/10 blur-[50px]" />
@@ -203,7 +203,7 @@ export default function LeaderboardPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Ödül Havuzu
+                Prize Pool
               </p>
               <div className="mt-1 flex items-baseline gap-1.5">
                 <span className="text-gradient text-3xl font-bold">
@@ -212,7 +212,7 @@ export default function LeaderboardPage() {
                 <span className="text-sm font-medium text-primary">USDC</span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {ch.participants} koşucu · {Number(entryUsdc).toFixed(0)} USDC katılım
+                {ch.participants} runners · {Number(entryUsdc).toFixed(0)} USDC entry
               </p>
             </div>
             <ProgressRing
@@ -228,11 +228,11 @@ export default function LeaderboardPage() {
           <div className="mt-4 flex items-center gap-2 border-t border-white/[0.06] pt-3">
             <Clock className="size-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              {c.isFinalized ? "Yarışma kapandı" : `Kalan süre: ${countdown}`}
+              {c.isFinalized ? "Challenge closed" : `Time left: ${countdown}`}
             </span>
           </div>
 
-          {/* Havuzun nerede durduğu — iddia değil, doğrulanabilir bağlantı */}
+          {/* Where the pool actually sits — a verifiable link, not a claim */}
           <a
             href={explorerContract(RUNFORREST_VAULT_ID)}
             target="_blank"
@@ -240,7 +240,7 @@ export default function LeaderboardPage() {
             className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground transition-colors hover:text-primary"
           >
             <Wallet className="size-3" />
-            Havuz DeFindex vault&apos;unda tutuluyor ↗
+            The pool is held in a DeFindex vault ↗
           </a>
         </div>
       </GlassCard>
@@ -261,7 +261,7 @@ export default function LeaderboardPage() {
         ) : c.joined ? (
           <div className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/20 px-4 py-2.5 text-sm font-medium text-emerald-400">
             <Check className="size-4" />
-            Katıldın
+            Joined
           </div>
         ) : c.isOver ? (
           <button
@@ -271,7 +271,7 @@ export default function LeaderboardPage() {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-40"
           >
             {c.busy ? <Loader2 className="size-4 animate-spin" /> : <Trophy className="size-4" />}
-            Yarışmayı kapat
+            Close challenge
           </button>
         ) : (
           <NeonButton
@@ -280,7 +280,7 @@ export default function LeaderboardPage() {
             disabled={c.busy}
           >
             {c.busy ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
-            {c.busy ? "İşleniyor…" : `Katıl · ${Number(entryUsdc).toFixed(0)} USDC`}
+            {c.busy ? "Processing…" : `Join · ${Number(entryUsdc).toFixed(0)} USDC`}
           </NeonButton>
         )}
 
@@ -290,11 +290,11 @@ export default function LeaderboardPage() {
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium transition-all hover:border-primary/20 hover:bg-white/10"
         >
           <Gift className="size-4 text-primary" />
-          Ödüller
+          Rewards
         </button>
       </div>
 
-      {/* Ödül alındıysa: nakde çevirmenin doğal anı */}
+      {/* Winnings claimed: the natural moment to cash out */}
       {c.me?.claimed && c.me.payout > 0n && (
         <GlassCard glow className="p-4">
           <div className="flex items-center gap-3">
@@ -303,10 +303,10 @@ export default function LeaderboardPage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
-                {fromStroops(c.me.payout)} USDC kazandın
+                You won {fromStroops(c.me.payout)} USDC
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Banka hesabına Türk Lirası olarak çekebilirsin
+                Withdraw it to your bank account in Turkish Lira
               </p>
             </div>
             <button
@@ -314,19 +314,19 @@ export default function LeaderboardPage() {
               onClick={() => setCashOutOpen(true)}
               className="shrink-0 rounded-xl bg-primary/15 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
             >
-              IBAN&apos;a çek
+              Withdraw to IBAN
             </button>
           </div>
         </GlassCard>
       )}
 
-      {/* işlem / hata bildirimi */}
+      {/* transaction / error notice */}
       {c.lastHash && (
         <GlassCard className="p-3">
           <div className="flex items-center gap-2">
             <Check className="size-3.5 text-emerald-400" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium">İşlem onaylandı</p>
+              <p className="text-xs font-medium">Transaction confirmed</p>
               <a
                 href={explorerTx(c.lastHash)}
                 target="_blank"
@@ -349,13 +349,13 @@ export default function LeaderboardPage() {
         </GlassCard>
       )}
 
-      {/* ─── ÖDÜL DAĞILIMI ─── */}
+      {/* ─── PRIZE SPLIT ─── */}
       {showRewards && (
         <div className="space-y-2">
           {rewards.length === 0 ? (
             <GlassCard className="p-4">
               <p className="text-xs text-muted-foreground">
-                Henüz koşu kaydı yok — ödül dağılımı ilk koşuyla birlikte belirlenir.
+                No runs recorded yet — the split is decided once the first run lands.
               </p>
             </GlassCard>
           ) : (
@@ -363,9 +363,9 @@ export default function LeaderboardPage() {
               <GlassCard key={r.place} className="flex items-center gap-3 p-3">
                 <RankDisplay rank={r.place} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{r.place}. sıra</p>
+                  <p className="text-sm font-medium">Place {r.place}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    havuzun %{r.pct}&apos;i
+                    {r.pct}% of the pool
                   </p>
                 </div>
                 <span className="font-semibold text-primary">
@@ -375,7 +375,7 @@ export default function LeaderboardPage() {
             ))
           )}
           <p className="px-1 text-[10px] text-muted-foreground">
-            Dağıtım kuralı kontratta sabit; yuvarlama artığı son kazanana eklenir.
+            The split is fixed in the contract; any rounding remainder goes to the last winner.
           </p>
         </div>
       )}
@@ -383,17 +383,17 @@ export default function LeaderboardPage() {
       {/* ─── SIRALAMA ─── */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-semibold">Koşucular</h2>
+          <h2 className="text-sm font-semibold">Runners</h2>
           <span className="text-[10px] text-muted-foreground">
-            zincirden okundu
+            read from chain
           </span>
         </div>
 
         {c.leaders.length === 0 ? (
           <GlassCard className="p-6 text-center">
-            <p className="text-sm">Henüz kimse katılmadı.</p>
+            <p className="text-sm">Nobody has joined yet.</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              İlk katılan sen ol — havuzu sen başlat.
+              Be the first — start the pool yourself.
             </p>
           </GlassCard>
         ) : (
@@ -432,7 +432,7 @@ export default function LeaderboardPage() {
               <div className="text-right">
                 <p className="text-sm font-semibold tabular-nums">{km(l.distanceM)}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  km · {l.runs} koşu
+                  km · {l.runs} runs
                 </p>
               </div>
             </GlassCard>
@@ -442,13 +442,13 @@ export default function LeaderboardPage() {
 
       <OffRampSheet open={cashOutOpen} onClose={() => setCashOutOpen(false)} />
 
-      {/* Katılım anında açılan TRY yükleme ekranı */}
+      {/* The fiat deposit sheet, opened at the moment of joining */}
       <OnRampSheet
         open={rampOpen}
         onClose={() => setRampOpen(false)}
         neededUsdc={needed}
         onFunded={() => {
-          // Para geldi; katılımı kaldığı yerden sürdür.
+          // Funds landed; resume the join where it left off.
           setRampOpen(false);
           handleJoin();
         }}

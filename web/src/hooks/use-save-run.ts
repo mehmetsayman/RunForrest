@@ -27,8 +27,8 @@ export function useSaveRun() {
   });
 
   const saveRun = useCallback(async (data: RunData) => {
-    // Supabase opsiyonel. Yapılandırılmamışsa rota kaydedilmez ama koşu
-    // yine de zincire yazılır — çağıran taraf buna göre davranır.
+    // Supabase is optional. Without it the route is not saved, but the run is
+    // still written to chain — the caller handles that.
     if (!isSupabaseConfigured) {
       setState({ loading: false, success: true, error: null });
       return true;

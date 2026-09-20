@@ -37,17 +37,17 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 /* ─── HELPERS ─── */
 
 /**
- * Saate göre selamlama.
+ * Time-of-day greeting.
  *
- * Render sırasında okunamaz: sunucu UTC'ye, tarayıcı yerel saate göre
- * farklı metin üretir ve hydration uyuşmazlığı çıkar. Bu yüzden mount
- * sonrası hesaplanıyor; ilk boyamada nötr bir selam görünür.
+ * It cannot be read during render: the server's hour and the browser's
+ * hour disagree, which produces a hydration mismatch. It is computed
+ * after mount instead, so the first paint shows a neutral greeting.
  */
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Günaydın";
-  if (hour < 18) return "İyi günler";
-  return "İyi akşamlar";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function formatDuration(secs: number): string {
@@ -84,25 +84,25 @@ type DbRun = {
 /* ─── PAGE ─── */
 
 export default function DashboardPage() {
-  const [greeting, setGreeting] = useState("Merhaba");
+  const [greeting, setGreeting] = useState("Hello");
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGreeting(getGreeting());
   }, []);
   const { isConnected, displayAddress, address } = useWallet();
-  // Sayılar zincirden; veri yoksa "—" gösteriyoruz, uydurmuyoruz.
+  // Every number comes from chain. With no data we show "—" rather than inventing one.
   const badges = useBadges(address);
   const { id: activeId } = useActiveChallengeId();
   const active = useChallenge(activeId);
   const [dbRuns, setDbRuns] = useState<DbRun[]>([]);
 
-  /** Aktif yarışmadaki kendi ilerlemem — zincirden. */
+  /** My own progress in the active challenge, read from chain. */
   const myMeters = active.me?.distance_m ?? 0;
   const targetMeters = active.challenge?.target_distance_m ?? 0;
   const progressPct =
     targetMeters > 0 ? Math.min(100, (myMeters / targetMeters) * 100) : 0;
 
-  /** Bu haftanın koşuları (Supabase varsa). */
+  /** This week's runs (when Supabase is configured). */
   const weekBuckets = (() => {
     const out = [0, 0, 0, 0, 0, 0, 0];
     const now = new Date();
@@ -119,8 +119,8 @@ export default function DashboardPage() {
   const weekTotal = weekBuckets.reduce((a, b) => a + b, 0);
 
   useEffect(() => {
-    // Supabase opsiyonel: yapılandırılmamışsa koşu geçmişi boş kalır,
-    // zincire dayalı her şey çalışmaya devam eder.
+    // Supabase is optional: without it the run history stays empty and
+    // everything backed by the chain keeps working.
     if (!isSupabaseConfigured) return;
     (async () => {
       try {
@@ -131,7 +131,7 @@ export default function DashboardPage() {
           .limit(10);
         if (data && data.length > 0) setDbRuns(data);
       } catch {
-        /* geçmiş okunamadı — sayfa yine de çalışır */
+        /* history unavailable — the page still works */
       }
     })();
   }, []);
@@ -152,7 +152,7 @@ export default function DashboardPage() {
               {isConnected ? (
                 <span className="font-mono font-medium text-primary">{displayAddress}</span>
               ) : (
-                <span className="font-medium">Cüzdan bağlı değil</span>
+                <span className="font-medium">Wallet not connected</span>
               )}
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function DashboardPage() {
               className="gap-1 border-primary/30 bg-primary/10 text-[10px] text-primary"
             >
               <Flame className="size-3" />
-              {badges.totalRuns} doğrulanmış koşu
+              {badges.totalRuns} verified runs
             </Badge>
           ) : (
             <ConnectButton variant="compact" />
@@ -188,7 +188,7 @@ export default function DashboardPage() {
           <div className="flex-1">
             <Badge className="mb-2 border-0 bg-primary/20 text-[10px] text-primary">
               <Zap className="mr-1 size-3" />
-              {activeId !== null ? `Yarışma #${activeId}` : "Aktif yarışma yok"}
+              {activeId !== null ? `Challenge #${activeId}` : "No active challenge"}
             </Badge>
             <p className="text-2xl font-bold tabular-nums">
               {(myMeters / 1000).toFixed(1)}{" "}
@@ -196,8 +196,8 @@ export default function DashboardPage() {
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {!active.joined
-                ? "Henüz katılmadın"
-                : `${Math.max(0, (targetMeters - myMeters) / 1000).toFixed(1)} km kaldı`}
+                ? "Not joined yet"
+                : `${Math.max(0, (targetMeters - myMeters) / 1000).toFixed(1)} km to go`}
             </p>
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
               <div
@@ -212,25 +212,25 @@ export default function DashboardPage() {
       {/* ─── ANIMATED STATS GRID ─── */}
       <div className="grid grid-cols-2 gap-2.5">
         <AnimatedStat
-          label="Doğrulanmış mesafe"
+          label="Verified distance"
           value={`${badges.totalKm} km`}
           icon={Route}
           delay={0}
         />
         <AnimatedStat
-          label="Doğrulanmış koşu"
+          label="Verified runs"
           value={String(badges.totalRuns)}
           icon={Flame}
           delay={80}
         />
         <AnimatedStat
-          label="Şehir"
+          label="Cities"
           value={String(badges.cities)}
           icon={Activity}
           delay={160}
         />
         <AnimatedStat
-          label="Rozet"
+          label="Badges"
           value={String(badges.collection.length)}
           icon={Award}
           delay={240}
@@ -272,7 +272,7 @@ export default function DashboardPage() {
           </span>
         </div>
         <div className="flex items-center justify-between">
-          {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((day, i) => {
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => {
             const values = weekBuckets;
             const hasRun = values[i] > 0;
             const isToday = i === (new Date().getDay() + 6) % 7;
@@ -311,19 +311,19 @@ export default function DashboardPage() {
       {/* ─── CITY BADGES ─── */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Şehir rozetleri</h2>
+          <h2 className="text-sm font-semibold">City badges</h2>
           <Link
             href="/profile"
             className="flex items-center gap-0.5 text-xs text-primary"
           >
-            Tümü <ChevronRight className="size-3" />
+            All <ChevronRight className="size-3" />
           </Link>
         </div>
         <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
           {badges.collection.length === 0 && (
             <GlassCard className="w-full p-4 text-center">
               <p className="text-xs text-muted-foreground">
-                Henüz rozetin yok — bir şehirde ilk koşunu tamamla
+                No badges yet — finish your first run in a city
               </p>
             </GlassCard>
           )}
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-xs font-semibold">{badge.city}</p>
                 <p className="mt-0.5 text-[9px] text-muted-foreground">
-                  Tier {meta.roman} · {badge.runs} koşu
+                  Tier {meta.roman} · {badge.runs} runs
                 </p>
                 <Badge className={`mt-1.5 border-0 bg-white/10 text-[8px] ${meta.text}`}>
                   {meta.label}
@@ -354,7 +354,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ─── SON KOŞU HARİTASI (yalnızca gerçek koşu varsa) ─── */}
+      {/* ─── LAST RUN MAP (only when a real run exists) ─── */}
       {dbRuns.length > 0 && dbRuns[0].positions && (
       <GlassCard glow className="overflow-hidden p-0">
         <RunMap
@@ -366,22 +366,22 @@ export default function DashboardPage() {
         />
         <div className="flex items-center justify-between p-3">
           <div>
-            <p className="text-xs font-semibold">Son koşu</p>
+            <p className="text-xs font-semibold">Last run</p>
             <p className="text-[10px] text-muted-foreground">
               {`${(dbRuns[0].distance_meters / 1000).toFixed(2)} km · ${formatDuration(dbRuns[0].duration_seconds)} · ${timeAgo(dbRuns[0].created_at)}`}
             </p>
           </div>
           <Link href="/run" className="rounded-lg bg-primary/15 px-2.5 py-1.5 text-[10px] font-medium text-primary transition-colors hover:bg-primary/25">
-            Detay
+            Details
           </Link>
         </div>
       </GlassCard>
       )}
 
-      {/* ─── SON KOŞULAR ─── */}
+      {/* ─── RECENT RUNS ─── */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Son koşular</h2>
+          <h2 className="text-sm font-semibold">Recent runs</h2>
           <Link href="/run" className="text-xs text-primary">
             View all
           </Link>
@@ -389,9 +389,9 @@ export default function DashboardPage() {
         <div className="space-y-2">
           {dbRuns.length === 0 && (
             <GlassCard className="p-6 text-center">
-              <p className="text-sm">Henüz kayıtlı koşun yok</p>
+              <p className="text-sm">No runs recorded yet</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                İlk koşunu tamamla — mesafen Stellar üzerinde doğrulansın
+                Finish your first run — your distance gets verified on Stellar
               </p>
             </GlassCard>
           )}
@@ -459,12 +459,12 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="font-semibold">
-              {badges.totalRuns === 0 ? "Hadi başlayalım" : "Devam et"}
+              {badges.totalRuns === 0 ? "Let's get started" : "Keep going"}
             </p>
             <p className="text-xs text-muted-foreground">
               {badges.totalRuns === 0
-                ? "İlk koşunu tamamla — mesafen Stellar üzerinde doğrulansın."
-                : `${badges.totalKm} km doğrulandı, ${badges.cities} şehir. Yeni bir şehirde koş, koleksiyonu büyüt.`}
+                ? "Finish your first run — your distance gets verified on Stellar."
+                : `${badges.totalKm} km verified across ${badges.cities} cities. Run in a new city to grow the collection.`}
             </p>
           </div>
         </div>

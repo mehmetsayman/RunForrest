@@ -4,11 +4,11 @@ import "./globals.css";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 import { Providers } from "@/components/providers";
 
-// Stellar Design System tipografisi: Inter (metin) + Inconsolata (mono).
-// SDS tek aile kullanıyor; ayrımı ağırlık ve harf aralığıyla yapıyor.
+// Stellar Design System typography: Inter (text) + Inconsolata (mono).
+// SDS uses a single family and separates roles by weight and letter spacing.
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin", "latin-ext"],   // latin-ext: Türkçe ş ğ ı İ ç ö ü
+  subsets: ["latin", "latin-ext"],   // latin-ext covers place names such as Çanakkale
   display: "swap",
 });
 
@@ -21,7 +21,7 @@ const inconsolata = Inconsolata({
 export const metadata: Metadata = {
   title: `${APP_NAME} — ${APP_TAGLINE}`,
   description:
-    "Stellar üzerinde sosyal koşu protokolü. Şehir rozetleri kazan, yarışmalara katıl, TRY ile USDC yükle.",
+    "A social running protocol on Stellar. Earn city badges, join challenges, top up USDC with Turkish Lira.",
   applicationName: APP_NAME,
   manifest: "/manifest.json",
   appleWebApp: {
@@ -49,7 +49,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="tr"
+      lang="en"
       className={`dark ${inter.variable} ${inconsolata.variable} h-full`}
     >
       <body

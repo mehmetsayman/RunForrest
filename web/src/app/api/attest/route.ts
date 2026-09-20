@@ -1,17 +1,19 @@
 /**
- * Koşu onaylama (attestation) — sunucu tarafı.
+ * Run attestation — server side.
  *
- * NEDEN SUNUCUDA: `record_progress` ve `record_run` attestor anahtarının
- * imzasını istiyor. O anahtar tarayıcıya konamaz; konsaydı herkes istediği
- * mesafeyi zincire yazabilirdi.
+ * WHY ON THE SERVER: `record_progress` and `record_run` require the attestor
+ * key's signature. That key cannot live in the browser — if it did, anyone
+ * could write any distance they liked to chain.
  *
- * GÜVEN VARSAYIMI — açıkça: GPS verisi iki günlük bir hackathon penceresinde
- * trustless doğrulanamaz. Bu uç nokta, koşunun gerçekten yapıldığına dair
- * TEK otorite. Yani sistem bu noktada merkezî. Gizlemiyoruz; README'de
- * "Güven varsayımları" başlığı altında yazılı ve yol haritasında bunun nasıl
- * dağıtılacağı (çoklu attestor, cihaz imzası, ZK konum kanıtı) anlatılıyor.
+ * TRUST ASSUMPTION, stated plainly: GPS data cannot be verified trustlessly
+ * within a two-day hackathon window. This endpoint is the SOLE authority on
+ * whether a run really happened, which makes the system centralised at this
+ * point. We do not hide it: the README says so under "Trust assumptions", and
+ * the roadmap covers how it gets decentralised (multiple attestors, device
+ * signatures, ZK location proofs).
  *
- * Buradaki kontroller dürüstlük sağlamaz, yalnızca en kaba saçmalıkları eler.
+ * The checks below do not establish honesty; they only filter out the crudest
+ * nonsense.
  */
 
 import { NextResponse } from "next/server";
@@ -35,11 +37,11 @@ const NETWORK =
 const CHALLENGE_ID = process.env.NEXT_PUBLIC_RUNFORREST_CHALLENGE_ID ?? "";
 const BADGE_ID = process.env.NEXT_PUBLIC_RUNFORREST_BADGE_ID ?? "";
 
-/** Makul koşu sınırları — bariz uydurmaları eler. */
+/** Plausible run bounds — they filter out obvious nonsense. */
 const MAX_DISTANCE_M = 100_000; // 100 km
 const MIN_DISTANCE_M = 100;
-const MIN_SPEED_MS = 0.5; // ~1.8 km/s — yürüyüşten yavaş
-const MAX_SPEED_MS = 12; // ~43 km/s — dünya rekoru üstü
+const MIN_SPEED_MS = 0.5; // ~1.8 km/h — slower than walking
+const MAX_SPEED_MS = 12; // ~43 km/h — above the world record
 
 type Body = {
   runner: string;
@@ -80,9 +82,9 @@ async function invoke(
     const got = await server.getTransaction(sent.hash);
     if (got.status === rpc.Api.GetTransactionStatus.SUCCESS) return sent.hash;
     if (got.status === rpc.Api.GetTransactionStatus.FAILED) {
-      throw new Error(`${method} zincirde başarısız oldu`);
+      throw new Error(`${method} failed on chain`);
     }
-    if (Date.now() > deadline) throw new Error(`${method} zaman aşımı`);
+    if (Date.now() > deadline) throw new Error(`${method} timed out`);
     await new Promise((r) => setTimeout(r, 1500));
   }
 }
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
   const secret = process.env.ATTESTOR_SECRET;
   if (!secret) {
     return NextResponse.json(
-      { error: "Sunucuda ATTESTOR_SECRET tanımlı değil" },
+      { error: "ATTESTOR_SECRET is not set on the server" },
       { status: 503 },
     );
   }
@@ -100,15 +102,15 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Geçersiz istek gövdesi" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
   const { runner, distanceM, durationS, city, challengeId } = body;
 
-  /* ─── kaba akıl kontrolleri ─── */
+  /* ─── coarse sanity checks ─── */
 
   if (!runner || !/^G[A-Z2-7]{55}$/.test(runner)) {
-    return NextResponse.json({ error: "Geçersiz koşucu adresi" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid runner address" }, { status: 400 });
   }
   if (
     !Number.isFinite(distanceM) ||
@@ -116,23 +118,23 @@ export async function POST(req: Request) {
     distanceM > MAX_DISTANCE_M
   ) {
     return NextResponse.json(
-      { error: `Mesafe ${MIN_DISTANCE_M}–${MAX_DISTANCE_M} m aralığında olmalı` },
+      { error: `Distance must be between ${MIN_DISTANCE_M}–${MAX_DISTANCE_M} m` },
       { status: 400 },
     );
   }
   if (!Number.isFinite(durationS) || durationS <= 0) {
-    return NextResponse.json({ error: "Geçersiz süre" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
   }
 
   const speed = distanceM / durationS;
   if (speed < MIN_SPEED_MS || speed > MAX_SPEED_MS) {
     return NextResponse.json(
-      { error: `İnsan dışı hız (${speed.toFixed(1)} m/s) — koşu reddedildi` },
+      { error: `Non-human speed (${speed.toFixed(1)} m/s) — run rejected` },
       { status: 422 },
     );
   }
 
-  /* ─── zincire yaz ─── */
+  /* ─── write to chain ─── */
 
   const attestor = Keypair.fromSecret(secret);
   const meters = Math.round(distanceM);
@@ -140,7 +142,7 @@ export async function POST(req: Request) {
     errors: [],
   };
 
-  // Yarışma ilerlemesi — koşucu katılmadıysa kontrat reddeder, bu normaldir.
+  // Challenge progress — the contract rejects a runner who never joined, which is fine.
   if (challengeId !== undefined && CHALLENGE_ID) {
     try {
       result.progress = await invoke(attestor, CHALLENGE_ID, "record_progress", [
@@ -149,11 +151,11 @@ export async function POST(req: Request) {
         nativeToScVal(meters, { type: "u32" }),
       ]);
     } catch (e) {
-      result.errors.push(`yarışma: ${(e as Error).message}`);
+      result.errors.push(`challenge: ${(e as Error).message}`);
     }
   }
 
-  // Şehir rozeti — yarışmadan bağımsız, her koşu sayılır.
+  // City badge — independent of challenges, every run counts.
   if (city && BADGE_ID) {
     try {
       result.badge = await invoke(attestor, BADGE_ID, "record_run", [
@@ -162,7 +164,7 @@ export async function POST(req: Request) {
         nativeToScVal(meters, { type: "u32" }),
       ]);
     } catch (e) {
-      result.errors.push(`rozet: ${(e as Error).message}`);
+      result.errors.push(`badge: ${(e as Error).message}`);
     }
   }
 

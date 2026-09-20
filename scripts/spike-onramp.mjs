@@ -10,14 +10,14 @@ const AUTH=g('WEB_AUTH_ENDPOINT'), SEP6=g('TRANSFER_SERVER'), KYC=g('KYC_SERVER'
 const ISSUER=toml.match(/issuer="(G[A-Z0-9]+)"/)[1];
 const USDC=new Asset('USDC',ISSUER);
 
-// hesap + trustline
+// account + trustline
 const kp=Keypair.random();
 await fetch(`https://friendbot.stellar.org?addr=${kp.publicKey()}`);
 const acc=await horizon.loadAccount(kp.publicKey());
 const tx=new TransactionBuilder(acc,{fee:String(Number(BASE_FEE)*10),networkPassphrase:NET})
   .addOperation(Operation.changeTrust({asset:USDC})).setTimeout(60).build();
 tx.sign(kp); await horizon.submitTransaction(tx);
-console.log('1) hesap+trustline OK', kp.publicKey());
+console.log('1) account+trustline OK', kp.publicKey());
 
 // SEP-10
 const ch=await j(await fetch(`${AUTH}?account=${kp.publicKey()}`));
@@ -46,7 +46,7 @@ const dep=await j(dres);
 console.log('5) SEP-6 deposit-exchange', dres.status);
 console.log(JSON.stringify(dep,null,2).slice(0,900));
 
-// 6) bankayi oyna: TRY geldi
+// 6) play the bank: the TRY arrived
 if (dep.id || dep.more_info_url) {
   const txId = dep.id;
   console.log('\n6) banka transferi simule ediliyor, tx id =', txId);
@@ -56,7 +56,7 @@ if (dep.id || dep.more_info_url) {
   });
   console.log('   simulate:', sim.status, JSON.stringify(await j(sim)).slice(0,300));
 
-  // 7) durum takibi
+  // 7) status tracking
   for (let i=0;i<10;i++){
     const t=await j(await fetch(`${HOME}/sep6/transaction?id=${txId}`,{headers:H}));
     const s=t.transaction?.status;

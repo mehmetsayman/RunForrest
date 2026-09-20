@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Geriye dönük uyumluluk: eski wagmi tabanlı `useWallet` importlarını
- * Stellar cüzdan context'ine yönlendirir.
+ * Backwards compatibility: redirects the old wagmi-based `useWallet` imports
+ * to the Stellar wallet context.
  */
 export { useWallet, truncate } from "@/components/wallet/wallet-provider";

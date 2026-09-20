@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * TRY → USDC yatırma akışı.
+ * TRY → USDC deposit flow.
  *
- * Anchor SEP-24 konuşmadığı için bu ekran bize ait — kullanıcı RunForrest'dan
- * çıkmıyor, bir iframe'e atlamıyor. Akış katılım anında açılıyor: koşucunun
- * USDC'si yoksa "Katıl" butonu doğrudan buraya düşüyor.
+ * The anchor does not speak SEP-24, so this sheet is ours: the runner never
+ * leaves RunForrest and never lands in an iframe. It opens at the moment of
+ * joining: with no USDC, the "Join" button drops straight into this flow.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -29,9 +29,9 @@ import { cn } from "@/lib/utils";
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Kullanıcının ihtiyacı olan USDC — tutar buna göre önerilir. */
+  /** USDC the runner is short of — the suggested amount is derived from it. */
   neededUsdc?: string;
-  /** USDC cüzdana düştüğünde çağrılır (ör. katılıma devam et). */
+  /** Called once USDC lands in the wallet (e.g. resume the join). */
   onFunded?: () => void;
 };
 
@@ -69,12 +69,12 @@ function CopyRow({ label, value, hint }: { label: string; value: string; hint?: 
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  incomplete: "Başlatılıyor",
-  pending_user_transfer_start: "Havaleniz bekleniyor",
-  pending_anchor: "Anchor işliyor",
-  pending_trust: "USDC için izin bekleniyor",
-  completed: "Tamamlandı",
-  error: "Hata",
+  incomplete: "Starting",
+  pending_user_transfer_start: "Waiting for your transfer",
+  pending_anchor: "Anchor processing",
+  pending_trust: "Waiting for USDC trustline",
+  completed: "Completed",
+  error: "Failed",
 };
 
 export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
@@ -86,20 +86,20 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
   const [activateBusy, setActivateBusy] = useState(false);
 
   /**
-   * Gereken USDC için önerilen TRY tutarı.
+   * Suggested TRY amount for the USDC the runner needs.
    *
-   * Prop'tan state'e kopyalamak yerine türetiliyor; kullanıcı bir şey
-   * yazdığı anda onun değeri geçerli olur.
+   * Derived rather than copied from prop into state; the moment the user
+   * types something, their value takes over.
    *
-   * Paya ihtiyaç var: kur işlem sırasında oynayabilir ve anchor %0.5
-   * komisyon alıyor. Tam denk bir tutar gönderilirse kullanıcı hedeflediği
-   * USDC'nin biraz altında kalır, katılım yine reddedilir ve bu ekrana
-   * geri düşer.
+   * The margin is needed: the rate can move mid-flow and the anchor takes a
+   * 0.5% fee. Sending an exact amount would leave the runner just under the
+   * USDC they were aiming for, the join would be rejected again, and they
+   * would land back on this sheet.
    */
   const suggestedTry = useMemo(() => {
-    const STEP = 50; // düzgün bir havale tutarına yuvarla
+    const STEP = 50; // round to a tidy bank-transfer amount
     if (!neededUsdc) return String(ANCHOR_LIMITS.minOnrampTry * 10);
-    const APPROX_RATE = 50; // TRY/USDC — bilinçli olarak temkinli
+    const APPROX_RATE = 50; // TRY/USDC — deliberately conservative
     const withMargin = Number(neededUsdc) * APPROX_RATE * 1.02;
     const rounded = Math.ceil(withMargin / STEP) * STEP;
     return String(
@@ -126,13 +126,13 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
 
   useEffect(() => {
     if (ramp.step === "done") {
-      // Önce cüzdanı tazele, sonra çağıranı bilgilendir.
+      // Refresh the wallet first, then tell the caller.
       (async () => {
         await refresh();
         onFunded?.();
       })();
     }
-    // onFunded/refresh kimliği her render değişebilir; adım yeterli tetikleyici.
+    // onFunded/refresh identities can change every render; the step is trigger enough.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ramp.step]);
 
@@ -150,9 +150,9 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
         <GlassCard strong className="max-h-[85vh] overflow-y-auto p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Türk Lirası ile yükle</h2>
+              <h2 className="text-lg font-semibold">Top up with Turkish Lira</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Banka havalesiyle TRY gönder, cüzdanına USDC gelsin
+                Send TRY by bank transfer, receive USDC in your wallet
               </p>
             </div>
             <button
@@ -165,16 +165,16 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
             </button>
           </div>
 
-          {/* Adım 0 — hesap. Stellar'da hesap, minimum XLM rezervini alana
-              kadar zincirde yoktur; bu atlanırsa trustline "Not Found" verir. */}
+          {/* Step 0 — the account. On Stellar an account does not exist on chain
+              until it holds the minimum XLM reserve; skip this and the trustline 404s. */}
           {!isActivated && (
             <div className="mb-4 rounded-xl border border-primary/25 bg-primary/10 p-3">
               <div className="flex gap-2.5">
                 <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
                 <div className="flex-1">
                   <p className="text-xs text-foreground">
-                    Stellar hesabın henüz açılmamış. Tek tıkla etkinleştir —
-                    testnet olduğu için ücretsiz.
+                    Your Stellar account is not activated yet. One click does it —
+                    free, because this is testnet.
                   </p>
                   <button
                     type="button"
@@ -190,21 +190,21 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                     className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary/20 px-3 py-1.5 text-[11px] font-medium text-primary hover:bg-primary/30 disabled:opacity-50"
                   >
                     {activateBusy && <Loader2 className="size-3 animate-spin" />}
-                    Hesabını etkinleştir
+                    Activate your account
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Adım 1 — trustline: USDC'yi alabilmek için tek seferlik ön koşul */}
+          {/* Step 1 — trustline: the one-time prerequisite for receiving USDC */}
           {isActivated && !hasTrustline && (
             <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
               <div className="flex gap-2.5">
                 <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-400" />
                 <div className="flex-1">
                   <p className="text-xs text-amber-200">
-                    USDC alabilmek için hesabında bir kerelik izin gerekiyor.
+                    Your account needs a one-time trustline before it can hold USDC.
                   </p>
                   <button
                     type="button"
@@ -220,20 +220,20 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                     className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-3 py-1.5 text-[11px] font-medium text-amber-200 hover:bg-amber-500/30 disabled:opacity-50"
                   >
                     {trustBusy && <Loader2 className="size-3 animate-spin" />}
-                    USDC&apos;yi etkinleştir
+                    Enable USDC
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ─── 1. tutar ─── */}
+          {/* ─── 1. amount ─── */}
           {ramp.step === "idle" ||
           ramp.step === "authenticating" ||
           ramp.step === "quoting" ? (
             <>
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Göndereceğin tutar
+                Amount you send
               </label>
               <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-primary/40">
                 <input
@@ -259,15 +259,15 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                         : "bg-white/[0.05] text-muted-foreground hover:bg-white/[0.1]",
                     )}
                   >
-                    {v.toLocaleString("tr-TR")} ₺
+                    {v.toLocaleString("en-US")} ₺
                   </button>
                 ))}
               </div>
 
               {!amountValid && (
                 <p className="mt-2 text-[11px] text-amber-400">
-                  Tutar {ANCHOR_LIMITS.minOnrampTry}–
-                  {ANCHOR_LIMITS.maxOnrampTry.toLocaleString("tr-TR")} TRY arasında olmalı
+                  Amount must be between {ANCHOR_LIMITS.minOnrampTry}–
+                  {ANCHOR_LIMITS.maxOnrampTry.toLocaleString("en-US")} TRY
                 </p>
               )}
 
@@ -280,35 +280,35 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                 {busy ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    {ramp.step === "authenticating" ? "Kimlik doğrulanıyor…" : "Kur alınıyor…"}
+                    {ramp.step === "authenticating" ? "Authenticating…" : "Fetching rate…"}
                   </>
                 ) : (
                   <>
-                    Devam et <ArrowRight className="size-4" />
+                    Continue <ArrowRight className="size-4" />
                   </>
                 )}
               </button>
 
               <p className="mt-3 text-center text-[10px] text-muted-foreground">
-                Kur, işlem başlatıldığında kilitlenir · komisyon %
+                Rate locks when the transfer starts · fee 
                 {ANCHOR_LIMITS.feePercent}
               </p>
             </>
           ) : null}
 
-          {/* ─── 2. havale talimatı ─── */}
+          {/* ─── 2. transfer instructions ─── */}
           {ramp.step === "awaiting_transfer" && ramp.deposit && (
             <>
               {ramp.quote && (
                 <div className="mb-4 rounded-xl border border-primary/20 bg-primary/10 p-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-muted-foreground">Göndereceğin</span>
+                    <span className="text-xs text-muted-foreground">You send</span>
                     <span className="font-semibold">
-                      {Number(ramp.quote.sell_amount).toLocaleString("tr-TR")} ₺
+                      {Number(ramp.quote.sell_amount).toLocaleString("en-US")} ₺
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <span className="text-xs text-muted-foreground">Alacağın</span>
+                    <span className="text-xs text-muted-foreground">You receive</span>
                     <span className="text-lg font-bold text-primary">
                       {Number(ramp.quote.buy_amount).toFixed(2)} USDC
                     </span>
@@ -329,9 +329,9 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                 )}
                 {reference && (
                   <CopyRow
-                    label="Açıklama (referans kodu)"
+                    label="Reference code"
                     value={reference}
-                    hint="Havale açıklamasına bunu yazmazsan para hesabına bağlanamaz"
+                    hint="Put this in the transfer reference, or the payment cannot be matched to you"
                   />
                 )}
               </div>
@@ -340,9 +340,9 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                 <div className="flex gap-2.5">
                   <Landmark className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Bu bir <strong>test ortamı</strong>: gerçek para hareket etmiyor.
-                    Havaleyi yapmış gibi devam edebilirsin — gerçek bir anchor&apos;da
-                    bu adımı bankan yapar.
+                    This is a <strong>test environment</strong>: no real money moves.
+                    Continue as if you had sent the transfer — with a real anchor your
+                    bank performs this step.
                   </p>
                 </div>
               </div>
@@ -353,20 +353,20 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                 className="neon-glow mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
                 <Building2 className="size-4" />
-                Havaleyi yaptım
+                I sent the transfer
               </button>
             </>
           )}
 
-          {/* ─── 3. işleniyor ─── */}
+          {/* ─── 3. processing ─── */}
           {ramp.step === "processing" && (
             <div className="py-6 text-center">
               <Loader2 className="mx-auto size-8 animate-spin text-primary" />
               <p className="mt-3 text-sm font-medium">
-                {STATUS_LABEL[ramp.tx?.status ?? ""] ?? "İşleniyor"}
+                {STATUS_LABEL[ramp.tx?.status ?? ""] ?? "Processing"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anchor ödemeyi doğrulayıp USDC&apos;yi gönderiyor
+                The anchor is confirming your payment and sending USDC
               </p>
               {ramp.tx?.status && (
                 <p className="mt-3 font-mono text-[10px] text-muted-foreground">
@@ -386,7 +386,7 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
                 {Number(ramp.tx?.amount_out ?? 0).toFixed(2)} USDC geldi
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Cüzdanında kullanıma hazır
+                Ready to use in your wallet
               </p>
               {ramp.tx?.stellar_transaction_id && (
                 <a
@@ -408,13 +408,13 @@ export function OnRampSheet({ open, onClose, neededUsdc, onFunded }: Props) {
             </div>
           )}
 
-          {/* ─── hata ─── */}
+          {/* ─── error ─── */}
           {ramp.step === "error" && (
             <div className="py-6 text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-red-500/15">
                 <AlertCircle className="size-7 text-red-400" />
               </div>
-              <p className="mt-3 text-sm font-medium">İşlem tamamlanamadı</p>
+              <p className="mt-3 text-sm font-medium">Transfer could not be completed</p>
               <p className="mt-1 break-words text-xs text-muted-foreground">
                 {ramp.error}
               </p>

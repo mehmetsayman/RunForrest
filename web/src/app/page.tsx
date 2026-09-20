@@ -22,13 +22,14 @@ import { ConnectButton } from "@/components/wallet/connect-button";
 
 /* ─── DATA ─── */
 
-/* Uydurma trafik rakamı yok. Buradaki her sayı doğrulanabilir:
-   kontratlar zincirde, testler depoda, SEP'ler anchor'ın toml'unda. */
+/* No invented traffic numbers. Every figure here is verifiable: the
+   contracts are on chain, the tests are in the repo, and the SEPs are
+   listed in the anchor's toml. */
 const stats = [
-  { value: "3", suffix: "", label: "Zincirde kontrat" },
-  { value: "5", suffix: "", label: "SEP standardı" },
-  { value: "23", suffix: "", label: "Geçen test" },
-  { value: "100", suffix: "%", label: "Havuz zincirde" },
+  { value: "3", suffix: "", label: "Contracts on chain" },
+  { value: "5", suffix: "", label: "SEP standards" },
+  { value: "24", suffix: "", label: "Passing tests" },
+  { value: "100", suffix: "%", label: "Pool held on chain" },
 ];
 
 const features = [
@@ -142,7 +143,7 @@ export default function LandingPage() {
           className="mb-6 border-primary/30 bg-primary/10 px-4 py-1.5 text-xs tracking-widest text-primary"
         >
           <Zap className="mr-1.5 size-3" />
-          STELLAR ÜZERİNDE WEB3 FİTNESS PROTOKOLÜ
+          WEB3 FITNESS PROTOCOL ON STELLAR
         </Badge>
 
         <h1 className="font-heading text-5xl font-bold leading-[1.05] tracking-tight sm:text-7xl lg:text-8xl">
@@ -154,7 +155,7 @@ export default function LandingPage() {
         </p>
 
         <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Stellar üzerinde konum tabanlı sosyal koşu. Track runs, earn city NFT badges,
+          Location-based social running on Stellar. Track runs, earn city NFT badges,
           join challenges, and build verifiable onchain reputation.
         </p>
 
@@ -197,7 +198,7 @@ export default function LandingPage() {
           <SectionHeading
             label="How it works"
             title="Run. Earn. Prove."
-            description="Everything you need for a verifiable active lifestyle, Stellar ile."
+            description="Everything you need for a verifiable active lifestyle, on Stellar."
           />
         </ScrollReveal>
 
@@ -442,7 +443,7 @@ export default function LandingPage() {
             <div className="max-w-xs">
               <Logo size="lg" />
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Proof of Active Lifestyle. Stellar üzerinde sosyal koşu protokolü.
+                Proof of Active Lifestyle. A social running protocol on Stellar.
               </p>
               <div className="mt-4 flex items-center gap-2">
                 <Badge variant="outline" className="border-primary/30 bg-primary/10 text-[10px] text-primary">

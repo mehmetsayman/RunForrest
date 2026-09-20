@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Cüzdan durumu — uygulama genelinde tek kaynak.
+ * Wallet state — the single source of truth across the app.
  *
- * wagmi'nin `useAccount` + `useBalance` hook'larının yerini alıyor. Stellar'da
- * bağlantı bir tarayıcı eklentisiyle konuşmak demek; bu yüzden durum context'te
- * tutuluyor ve sayfa yenilemesinde geri getiriliyor.
+ * This replaces wagmi's `useAccount` + `useBalance`. On Stellar, connecting
+ * means talking to a browser extension, so the state lives in context and is
+ * restored on page reload.
  */
 
 import {
@@ -35,19 +35,19 @@ type WalletState = {
   address: string | null;
   isConnected: boolean;
   isConnecting: boolean;
-  /** USDC bakiyesi, stroop cinsinden. */
+  /** USDC balance, in stroops. */
   balance: bigint;
-  /** Gösterim için ondalıklı USDC. */
+  /** USDC with decimals, for display. */
   balanceFormatted: string;
   hasTrustline: boolean;
-  /** Hesap zincirde açıldı mı? Yeni cüzdanlarda false. */
+  /** Has the account been activated on chain? False for new wallets. */
   isActivated: boolean;
   displayAddress: string;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   refresh: () => Promise<void>;
   addTrustline: () => Promise<void>;
-  /** Testnet hesabını Friendbot ile açar. */
+  /** Activates the testnet account via Friendbot. */
   activateAccount: () => Promise<void>;
   error: string | null;
 };
@@ -66,8 +66,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const loadAccount = useCallback(async (addr: string) => {
-    // Önce hesabın var olup olmadığına bak: yoksa bakiye/trustline sorgusu
-    // anlamsız ve "Not Found" hatasıyla patlıyor.
+    // Check the account exists first: without it, a balance or trustline
+    // query is meaningless and fails with "Not Found".
     let exists = false;
     try {
       exists = await accountExists(addr);
@@ -90,12 +90,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setHasTrustline(trust);
   }, []);
 
-  // Sayfa açılışında önceki oturumu geri getir.
+  // Restore the previous session on page load.
   useEffect(() => {
     let alive = true;
     (async () => {
       const cached = cachedAddress();
-      if (cached && alive) setAddress(cached); // anında göster, sonra doğrula
+      if (cached && alive) setAddress(cached); // show immediately, verify after
       const restored = await restoreWallet();
       if (!alive) return;
       setAddress(restored);
@@ -194,6 +194,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
 export function useWallet(): WalletState {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useWallet, WalletProvider içinde kullanılmalı");
+  if (!ctx) throw new Error("useWallet must be used inside WalletProvider");
   return ctx;
 }

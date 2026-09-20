@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Koşuyu zincire yazdırır.
+ * Writes a run to chain.
  *
- * İmzayı attestor anahtarı atıyor ve o anahtar sunucuda; bu yüzden istemci
- * `/api/attest` üzerinden geçiyor. Zincire iki şey yazılabilir:
- *   - yarışma ilerlemesi (koşucu bir yarışmaya katıldıysa)
- *   - şehir rozeti (her koşuda)
+ * The attestor key signs it and that key lives on the server, so the client
+ * goes through `/api/attest`. Two things can be written:
+ *   - challenge progress (if the runner joined a challenge)
+ *   - a city badge (on every run)
  *
- * İkisi bağımsız: yarışmaya katılmamış biri de rozet kazanır.
+ * The two are independent: a runner who joined nothing still earns a badge.
  */
 
 import { useCallback, useState } from "react";
@@ -46,7 +46,7 @@ export function useAttest() {
         const body = (await res.json()) as AttestResult & { error?: string };
 
         if (!res.ok) {
-          setError(body.error ?? `Onaylama başarısız (HTTP ${res.status})`);
+          setError(body.error ?? `Attestation failed (HTTP ${res.status})`);
           return null;
         }
         setResult(body);
@@ -65,11 +65,11 @@ export function useAttest() {
 }
 
 /**
- * GPS noktasından şehir adı çıkarır (OpenStreetMap Nominatim).
+ * Derives a city name from a GPS point (OpenStreetMap Nominatim).
  *
- * Başarısız olursa null döner — kullanıcı şehri elle yazabilir. Rozet şehir
- * adına göre verildiği için bu alan kullanıcı onayından geçiyor; sessizce
- * yanlış bir şehre rozet yazmıyoruz.
+ * Returns null on failure so the user can type the city themselves. Badges
+ * are keyed by city name, so this field goes through user confirmation: we
+ * never silently write a badge to the wrong city.
  */
 export async function reverseGeocodeCity(
   lat: number,

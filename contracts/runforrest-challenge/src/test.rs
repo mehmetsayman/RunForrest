@@ -9,15 +9,15 @@ use soroban_sdk::{
 
 /// DeFindex vault'unun test ikizi.
 ///
-/// Gerçek vault'un `deposit`/`withdraw` imzalarını ve share token davranışını
-/// taklit eder. Amacı vault'u test etmek değil — RunForrest'ın vault'a doğru
-/// argümanlarla, doğru yetkilendirmeyle gittiğini ve share muhasebesini
-/// doğru tuttuğunu doğrulamak.
+/// Mimics the real vault's `deposit`/`withdraw` signatures and share-token
+/// behaviour. The point is not to test the vault, but to verify RunForrest
+/// calls it with the right arguments and the right authorisation, and keeps
+/// its share accounting correct.
 ///
-/// ÖNEMLİ: gerçek DeFindex ilk yatırımda bir miktar minimum likidite kilitler
-/// (canlı testnet'te ölçüldü: 10 USDC yatırımda 1000 stroop). `deposit`
-/// dönüşündeki share sayısı ile GERÇEKTE basılan farklı olur. Mock bunu
-/// bilerek taklit ediyor — bu davranış üretimde bir kez `finalize`'ı kilitledi.
+/// IMPORTANT: the real DeFindex withholds some minimum liquidity on the first
+/// deposit (measured on live testnet: 1000 stroops on a 10 USDC deposit), so
+/// the share count returned by `deposit` differs from what is ACTUALLY minted.
+/// The mock reproduces this on purpose — it once locked `finalize` for real.
 mod mock_vault {
     use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Val, Vec};
 
@@ -51,14 +51,14 @@ mod mock_vault {
             let amount = amounts_desired.get(0).unwrap();
             let asset: Address = env.storage().instance().get(&Key::Asset).unwrap();
 
-            // Gerçek vault gibi: parayı kendine çeker (derin çağrı).
+            // Like the real vault: it pulls the money to itself (a deep call).
             token::Client::new(&env, &asset).transfer(
                 &from,
                 &env.current_contract_address(),
                 &amount,
             );
 
-            // İlk yatırımda minimum likidite kilitlenir.
+            // Minimum liquidity is withheld on the first deposit.
             let boot: bool = env.storage().instance().get(&Key::Bootstrapped).unwrap();
             let minted = if boot { amount } else { amount - MIN_LIQUIDITY };
             env.storage().instance().set(&Key::Bootstrapped, &true);
@@ -67,7 +67,7 @@ mod mock_vault {
             let cur: i128 = env.storage().persistent().get(&key).unwrap_or(0);
             env.storage().persistent().set(&key, &(cur + minted));
 
-            // Dönüşte kilitlenmemiş sayıyı bildirir — gerçek vault de böyle yapıyor.
+            // It reports the un-withheld count on return — as the real vault does.
             (amounts_desired, amount, None)
         }
 
@@ -98,7 +98,7 @@ mod mock_vault {
             out
         }
 
-        /// Vault bir share token'ı gibi davranır.
+        /// The vault behaves like a share token.
         pub fn balance(env: Env, id: Address) -> i128 {
             env.storage().persistent().get(&Key::Shares(id)).unwrap_or(0)
         }
@@ -180,15 +180,15 @@ fn join_moves_fee_into_the_vault() {
 
     f.client.join(&id, &alice);
 
-    // Ücret koşucudan çıktı
+    // The fee left the runner
     assert_eq!(f.token.balance(&alice), 40 * USDC);
-    // ve kontratta BEKLEMİYOR — vault'a gitti.
+    // and is NOT sitting in the contract — it went to the vault.
     assert_eq!(f.token.balance(&f.client.address), 0);
 
     let c = f.client.get_challenge(&id);
     assert_eq!(c.pool, 10 * USDC);
-    // İlk yatırımda vault minimum likidite kilitler; kaydedilen share
-    // dönüş değeri değil, GERÇEK bakiye farkı olmalı.
+    // The vault withholds minimum liquidity on the first deposit; the recorded
+    // shares must be the REAL balance delta, not the returned value.
     assert_eq!(c.shares, 10 * USDC - mock_vault::MIN_LIQUIDITY);
     assert_eq!(c.participants, 1);
 }
@@ -267,7 +267,7 @@ fn three_runners_split_50_30_20() {
     let pool = f.client.finalize(&id);
     assert_eq!(pool, 30 * USDC - mock_vault::MIN_LIQUIDITY);
 
-    // 1. %50, 2. %30, sonuncu kalanı (yuvarlama artığı dahil)
+    // 1st 50%, 2nd 30%, and the last takes the remainder (rounding dust included)
     assert_eq!(f.client.get_participant(&id, &bob).payout, pool * 50 / 100);
     assert_eq!(f.client.get_participant(&id, &carol).payout, pool * 30 / 100);
     assert_eq!(
@@ -322,7 +322,7 @@ fn runner_who_never_ran_gets_nothing() {
         f.client.try_claim(&id, &idle),
         Err(Ok(Error::NothingToClaim))
     );
-    // Tek koşan havuzun tamamını alır
+    // A single runner takes the whole pool
     assert_eq!(
         f.client.get_participant(&id, &alice).payout,
         20 * USDC - mock_vault::MIN_LIQUIDITY
@@ -332,7 +332,7 @@ fn runner_who_never_ran_gets_nothing() {
 #[test]
 fn whole_pool_is_distributed_no_dust_left() {
     let f = setup();
-    // 100/3 bölünmeyen bir havuz üret: 3 × 3.3333333 USDC
+    // Build a pool that does not divide by 3: 3 × 3.3333333 USDC
     let fee = 33_333_333i128;
     let id = open_challenge(&f, fee);
 
@@ -352,7 +352,7 @@ fn whole_pool_is_distributed_no_dust_left() {
     let total = f.client.get_participant(&id, &a).payout
         + f.client.get_participant(&id, &b).payout
         + f.client.get_participant(&id, &c).payout;
-    assert_eq!(total, pool, "havuzun tamamı dağıtılmalı, artık kalmamalı");
+    assert_eq!(total, pool, "the whole pool must be distributed, with no dust left");
 }
 
 #[test]
@@ -385,12 +385,12 @@ fn join_after_deadline_is_rejected() {
     );
 }
 
-/// REGRESYON: canlı testnet'te yakalandı.
+/// REGRESSION: caught on live testnet.
 ///
-/// DeFindex'in `deposit` dönüşü, gerçekte basılan share'den fazlasını
-/// bildiriyor (ilk yatırımda minimum likidite kilitleniyor). Kontrat dönüş
-/// değerini kaydetseydi, `finalize` sahip olmadığı kadar share çekmeye
-/// çalışır ve yarışma kalıcı olarak kilitlenirdi.
+/// DeFindex's `deposit` reports more shares than are actually minted (it
+/// withholds minimum liquidity on the first deposit). Had the contract
+/// recorded the returned value, `finalize` would try to withdraw shares it
+/// does not own, and the challenge would be locked forever.
 #[test]
 fn recorded_shares_match_the_real_vault_balance() {
     let f = setup();
@@ -406,24 +406,24 @@ fn recorded_shares_match_the_real_vault_balance() {
 
     assert_eq!(
         c.shares, real,
-        "kaydedilen share, vault'taki gerçek bakiyeyle birebir olmalı"
+        "recorded shares must match the real vault balance exactly"
     );
 
-    // Ve finalize gerçekten çekebilmeli — kilitlenmemeli.
+    // And finalize must actually be able to withdraw — no lock-up.
     f.client.record_progress(&id, &alice, &5000);
     f.env.ledger().set_timestamp(f.env.ledger().timestamp() + 2000);
     let pool = f.client.finalize(&id);
     assert_eq!(pool, real);
 }
 
-/// REGRESYON: kimse koşmazsa havuz kontratta kilitlenmemeli.
+/// REGRESSION: with nobody running, the pool must not lock up in the contract.
 ///
-/// Katılımcılar var ama hiçbirinin koşusu onaylanmadıysa (attestor düşmüş,
-/// pencere kısa kalmış, kimse çıkmamış) kazanan yok. Dağıtım yapılmazsa
-/// herkesin payout'u 0 kalır, claim() herkese NothingToClaim döner ve
-/// vault'tan çekilen para kontratta kalıcı olarak sıkışır.
+/// If there are participants but none of their runs was attested (the attestor
+/// was down, the window was too short, nobody turned up) there is no winner.
+/// Without a distribution every payout stays 0, claim() returns NothingToClaim
+/// to everyone, and the money pulled from the vault is stranded forever.
 ///
-/// Doğru davranış: katılım ücretleri sahiplerine iade edilir.
+/// Correct behaviour: the entry fees are refunded to their owners.
 #[test]
 fn nobody_ran_refunds_every_participant() {
     let f = setup();
@@ -435,7 +435,7 @@ fn nobody_ran_refunds_every_participant() {
     for r in [&a, &b, &c] {
         f.client.join(&id, r);
     }
-    // Bilerek hiç record_progress çağrılmıyor.
+    // record_progress is deliberately never called.
 
     f.env.ledger().set_timestamp(f.env.ledger().timestamp() + 2000);
     let pool = f.client.finalize(&id);
@@ -444,10 +444,10 @@ fn nobody_ran_refunds_every_participant() {
     let pb = f.client.get_participant(&id, &b).payout;
     let pc = f.client.get_participant(&id, &c).payout;
 
-    assert!(pa > 0 && pb > 0 && pc > 0, "herkes iade almalı");
-    assert_eq!(pa + pb + pc, pool, "havuzun tamamı iade edilmeli");
+    assert!(pa > 0 && pb > 0 && pc > 0, "everyone must be refunded");
+    assert_eq!(pa + pb + pc, pool, "the whole pool must be refunded");
 
-    // Ve gerçekten çekilebilmeli — kontratta para kalmamalı.
+    // And it must actually be claimable — no money left in the contract.
     let before = f.token.balance(&a);
     let got = f.client.claim(&id, &a);
     assert_eq!(got, pa);
@@ -458,6 +458,6 @@ fn nobody_ran_refunds_every_participant() {
     assert_eq!(
         f.token.balance(&f.client.address),
         0,
-        "kontratta sıkışan para kalmamalı"
+        "no money may stay stranded in the contract"
     );
 }

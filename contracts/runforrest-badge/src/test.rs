@@ -165,9 +165,9 @@ fn minter_can_be_rotated_by_admin() {
     assert_eq!(f.client.config().admin, f.admin);
 }
 
-/// Rozetler soulbound: kontratın transfer yüzeyi yok.
-/// Bu testin varlığı niyeti belgeliyor — aşağıdaki çağrıların hiçbiri
-/// derlenmez, çünkü böyle fonksiyonlar tanımlı değil:
+/// Badges are soulbound: the contract has no transfer surface.
+/// This test documents the intent — none of the calls below would compile,
+/// because no such functions are defined:
 ///   client.transfer(...) / client.approve(...) / client.burn(...)
 #[test]
 fn badges_are_soulbound_by_absence_of_transfer() {
@@ -176,7 +176,7 @@ fn badges_are_soulbound_by_absence_of_transfer() {
     let c = city(&f, "Istanbul");
     f.client.record_run(&alice, &c, &5000);
 
-    // Rozet yalnızca sahibinde okunabiliyor; devri mümkün kılan hiçbir
-    // giriş noktası yok.
+    // A badge is only readable on its owner; there is no entry point that
+    // would make a transfer possible.
     assert_eq!(f.client.get_badge(&alice, &c).runs, 1);
 }

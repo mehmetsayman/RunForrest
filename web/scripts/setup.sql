@@ -1,18 +1,18 @@
--- RunForrest — Supabase kurulumu (tek dosya)
+-- RunForrest — Supabase setup (single file)
 --
--- Supabase Dashboard → SQL Editor → bu dosyanın tamamını yapıştır → Run
+-- Supabase Dashboard → SQL Editor → paste this whole file → Run
 --
--- ÖNEMLİ: Yarışmalar, katılım ücretleri, ödül havuzu ve rozetler BURADA DEĞİL.
--- Onlar Soroban kontratlarında yaşıyor (bkz. ../../deployments.json).
--- Supabase yalnızca zincire yazmanın anlamsız olduğu iki şeyi tutuyor:
---   1. GPS rota poligonları (binlerce nokta — zincirde pahalı ve gereksiz)
---   2. Yarışma üstverisi (başlık, açıklama, konum — kozmetik)
+-- IMPORTANT: challenges, entry fees, the prize pool and badges are NOT HERE.
+-- They live in the Soroban contracts (see ../../deployments.json).
+-- Supabase holds only the two things not worth writing to chain:
+--   1. GPS route polylines (thousands of points — expensive and pointless on chain)
+--   2. Challenge metadata (title, description, location — cosmetic)
 --
--- Bu tablolar olmadan da uygulama çalışır: koşu geçmişi devre dışı kalır,
--- yarışmalar "Yarışma #N" olarak görünür, zincire dayalı her şey aynen sürer.
+-- The app works without these tables: run history is disabled, challenges
+-- show as "Challenge #N", and everything chain-backed carries on unchanged.
 
 -- ─────────────────────────────────────────────────────────────
--- 1. Koşular — GPS rotası ve koşu detayları
+-- 1. Runs — GPS route and run details
 -- ─────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS runs (
@@ -39,11 +39,11 @@ DROP POLICY IF EXISTS "Anyone can read runs" ON runs;
 CREATE POLICY "Anyone can read runs" ON runs FOR SELECT USING (true);
 
 -- ─────────────────────────────────────────────────────────────
--- 2. Yarışma üstverisi — zincirdeki id'ye bağlı kozmetik alanlar
+-- 2. Challenge metadata — cosmetic fields keyed by the on-chain id
 -- ─────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS challenge_meta (
-  -- runforrest_challenge kontratındaki yarışma id'si. Kaynak zincirdir.
+  -- The challenge id in the runforrest_challenge contract. The chain is the source.
   challenge_id INTEGER PRIMARY KEY,
   title TEXT,
   description TEXT,

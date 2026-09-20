@@ -1,10 +1,11 @@
-# Doğrulama script'leri
+# Verification scripts
 
-Canlı testnet'e karşı çalışırlar; bulgular `docs/TEKNIK-NOTLAR.md`.
+These run against live testnet; the findings are recorded in
+`docs/TECHNICAL-NOTES.md`.
 
 ```bash
 cd scripts && npm i @stellar/stellar-sdk
-node spike-sep10.mjs      # SEP-1 discovery -> SEP-10 JWT -> CORS -> korumali cagri
-node spike-onramp.mjs     # tam on-ramp: trustline -> KYC -> quote -> deposit -> banka simulasyonu
-node spike-defindex.mjs   # DeFindex testnet kontratlari + varlik uyusmazligi kontrolu
+node spike-sep10.mjs      # SEP-1 discovery -> SEP-10 JWT -> CORS -> authenticated call
+node spike-onramp.mjs     # full deposit: trustline -> KYC -> quote -> deposit -> bank simulation
+node spike-defindex.mjs   # DeFindex testnet contracts + asset mismatch check
 ```

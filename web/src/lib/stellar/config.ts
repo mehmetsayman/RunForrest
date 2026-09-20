@@ -1,7 +1,7 @@
 /**
- * Stellar ağ yapılandırması.
+ * Stellar network configuration.
  *
- * Tüm adresler canlı testnet'e karşı doğrulandı — bkz. docs/TEKNIK-NOTLAR.md
+ * Every address was verified against live testnet — see docs/TECHNICAL-NOTES.md
  */
 
 import { Networks } from "@stellar/stellar-sdk";
@@ -10,30 +10,30 @@ export const NETWORK_PASSPHRASE = Networks.TESTNET;
 export const HORIZON_URL = "https://horizon-testnet.stellar.org";
 export const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
 
-/** Anchor'ın SEP-1 home domain'i. Tüm endpoint'ler buradan keşfedilir. */
+/** The anchor's SEP-1 home domain. Every endpoint is discovered from it. */
 export const ANCHOR_HOME_DOMAIN = "tr-mock-anchor.fly.dev";
 
 /**
- * Anchor'ın ramp ettiği varlık. Circle'ın testnet USDC issuer'ı.
- * SEP-1 toml'dan da okunuyor; burası sadece trustline kurarken kullanılan sabit.
+ * The asset the anchor ramps. Circle's testnet USDC issuer.
+ * It is also read from the SEP-1 toml; this constant is only used when creating the trustline.
  */
 export const USDC_CODE = "USDC";
 export const USDC_ISSUER =
   "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 
-/** USDC'nin Stellar Asset Contract adresi — Soroban kontratları bunu kullanır. */
+/** USDC's Stellar Asset Contract address — used by the Soroban contracts. */
 export const USDC_SAC =
   "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
-/** DeFindex — kendi vault'umuz bu factory'den oluşturuldu. */
+/** DeFindex — our own vault was created from this factory. */
 export const DEFINDEX_FACTORY =
   "CDSCWE4GLNBYYTES2OCYDFQA2LLY4RBIAX6ZI32VSUXD7GO6HRPO4A32";
 export const SOROSWAP_ROUTER =
   "CCJUD55AG6W5HAI5LRVNKAE5WDP5XGZBUDS5WNTIVDU7O264UZZE7BRD";
 
 /**
- * Testnet'e deploy edilmiş kontratlarımız — bkz. deployments.json.
- * Uçtan uca doğrulandı: create → join → progress → finalize → claim.
+ * Our contracts deployed to testnet — see deployments.json.
+ * Verified end to end: create → join → progress → finalize → claim.
  */
 export const RUNFORREST_CHALLENGE_ID =
   process.env.NEXT_PUBLIC_RUNFORREST_CHALLENGE_ID ??
@@ -41,12 +41,12 @@ export const RUNFORREST_CHALLENGE_ID =
 export const RUNFORREST_BADGE_ID =
   process.env.NEXT_PUBLIC_RUNFORREST_BADGE_ID ??
   "CBEMQGDLL2KNMBSINUSQM7QXMKAOMFIJDFQL27F3ZEWSRYA75WB3VCU6";
-/** RunForrest Prize Vault — ödül havuzunun custody katmanı. */
+/** RunForrest Prize Vault — the custody layer for the prize pool. */
 export const RUNFORREST_VAULT_ID =
   process.env.NEXT_PUBLIC_RUNFORREST_VAULT_ID ??
   "CCHEMDA647SX2RPQ4FYQ3HLDXLVSREQSIAWXVQ2AYRMEHPQLVSGXASI7";
 
-/** Anchor limitleri — /health ve /sep6/info'dan doğrulandı. */
+/** Anchor limits — verified from /health and /sep6/info. */
 export const ANCHOR_LIMITS = {
   minOnrampTry: 50,
   maxOnrampTry: 3000,
@@ -55,7 +55,7 @@ export const ANCHOR_LIMITS = {
   feePercent: 0.5,
 } as const;
 
-/** Challenge katılım ücreti. 10 USDC ≈ 500 TRY (anchor limitleri içinde). */
+/** Challenge entry fee. 10 USDC ≈ 500 TRY (within the anchor's limits). */
 export const ENTRY_FEE_USDC = "10";
 
 export const explorerTx = (hash: string) =>

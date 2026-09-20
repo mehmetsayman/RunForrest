@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,7 +38,7 @@
     align-items: center;
   }
 
-  /* ince ızgara — derinlik, dikkat dağıtmadan */
+  /* fine grid — depth, without drawing attention */
   .grid {
     position: absolute; inset: 0;
     background-image:
@@ -48,10 +48,10 @@
     mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 30%, transparent 78%);
   }
 
-  /* koşu rotası motifi — ürünün ne olduğunu tek çizgide anlatıyor */
+  /* running-route motif — it says what the product is in a single line */
   .route { position: absolute; right: -20px; top: 0; height: 100%; width: 560px; opacity: .95; }
 
-  /* GÜVENLİ ALAN: içerik merkezi %75'te kalıyor */
+  /* SAFE AREA: the content stays within the central 75% */
   .content { position: relative; padding: 0 0 0 96px; max-width: 820px; }
 
   .eyebrow {
@@ -103,7 +103,7 @@
   <div class="banner">
     <div class="grid"></div>
 
-    <!-- koşu rotası: başlangıç noktası, yol, varış -->
+    <!-- running route: start point, path, finish -->
     <svg class="route" viewBox="0 0 560 640" fill="none">
       <defs>
         <linearGradient id="rg" x1="0" y1="640" x2="520" y2="0">
@@ -129,8 +129,8 @@
       <h1>Run<span class="accent">Forrest</span></h1>
 
       <p class="tagline">
-        Koş, kazan, <b>Türk Lirası</b> olarak çek.<br/>
-        Ödül havuzu bir vaat değil — <b>bir kontrat</b>.
+        Run, win, cash out in <b>Turkish Lira</b>.<br/>
+        The prize pool is <b>a contract</b>, not a promise.
       </p>
 
       <div class="chips">
@@ -141,7 +141,7 @@
       </div>
     </div>
 
-    <div class="foot">Rise In × Stellar Pro Hackathon 2026 · <b>Genesis Track</b> · İstanbul</div>
+    <div class="foot">Rise In × Stellar Pro Hackathon 2026 · <b>Genesis Track</b> · Istanbul</div>
   </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "name": "RunForrest",
   "short_name": "RunForrest",
-  "description": "Stellar üzerinde koşu protokolü. Şehir rozetleri kazan, yarışmalara katıl, TRY ile USDC yükle.",
+  "description": "A running protocol on Stellar. Earn city badges, join challenges, top up USDC with Turkish Lira.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#000000",

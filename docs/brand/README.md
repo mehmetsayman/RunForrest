@@ -1,55 +1,58 @@
-# RunForrest — marka ve tasarım sistemi
+# RunForrest — brand and design system
 
-## Renkler kaynaktan alındı, uydurulmadı
+## The colours were taken from the source, not invented
 
-Palet `@stellar/design-system@4.0.2` paketinin `sds-theme-dark` bloğundan
-çıkarıldı. Tahmin ya da "Stellar sarısına benzer bir şey" değil — birebir
-token değerleri.
+The palette was extracted from the `sds-theme-dark` block of the
+`@stellar/design-system@4.0.2` package. Not a guess, not "something close to
+Stellar yellow" — the exact token values.
 
-| Rol | Token | Değer |
+| Role | Token | Value |
 |---|---|---|
-| **Marka / primary** | `gold-09` | `#fdda24` |
-| Primary açık | `gold-10` | `#ffef5c` |
-| Primary koyu | `gold-11` | `#f0c000` |
-| İkincil vurgu | `lilac-11` | `#9e8cfc` |
-| Üçüncül vurgu | `teal-11` | `#00c2d7` |
-| Uyarı | `amber-09` | `#ffb224` |
-| Başarı | `green-11` | `#4cc38a` |
-| Hata | `red-11` | `#ff6369` |
-| Zemin | `base-00` | `#000000` |
-| Yüzey | `gray-01` | `#161616` |
-| Kenarlık | `gray-06` | `#343434` |
-| Metin | `gray-12` | `#ededed` |
-| Soluk metin | `gray-11` | `#a0a0a0` |
+| **Brand / primary** | `gold-09` | `#fdda24` |
+| Primary light | `gold-10` | `#ffef5c` |
+| Primary dark | `gold-11` | `#f0c000` |
+| Secondary accent | `lilac-11` | `#9e8cfc` |
+| Tertiary accent | `teal-11` | `#00c2d7` |
+| Warning | `amber-09` | `#ffb224` |
+| Success | `green-11` | `#4cc38a` |
+| Error | `red-11` | `#ff6369` |
+| Background | `base-00` | `#000000` |
+| Surface | `gray-01` | `#161616` |
+| Border | `gray-06` | `#343434` |
+| Text | `gray-12` | `#ededed` |
+| Muted text | `gray-11` | `#a0a0a0` |
 
-> **Altın üstünde metin daima koyu** (`#161616`). Beyaz metin altın zeminde
-> kontrast eşiğini geçmez. `--primary-foreground` bu yüzden `#161616`.
+> **Text on gold is always dark** (`#161616`). White text on a gold background
+> does not clear the contrast threshold, which is why `--primary-foreground` is
+> `#161616`.
 
-## Tipografi
+## Typography
 
-Stellar Design System tek aile kullanıyor; ayrımı ağırlık ve harf aralığıyla
-yapıyor, ikinci bir aileyle değil.
+The Stellar Design System uses a single family and separates roles by weight and
+letter spacing, not by a second family.
 
-- **Inter** — metin ve başlıklar (`latin-ext` alt kümesiyle: ş ğ ı İ ç ö ü)
-- **Inconsolata** — monospace: adresler, işlem hash'leri, teknik etiketler
+- **Inter** — body text and headings (with the `latin-ext` subset, which covers
+  place names such as Çanakkale)
+- **Inconsolata** — monospace: addresses, transaction hashes, technical labels
 
-## Token adı yetmez, değer de değişmeli
+## Renaming tokens is not enough — the values have to change too
 
-Bir tasarım sistemini benimsemek CSS değişken **adlarını** değiştirmek değildir.
-`--brand-light` gibi bir isim doğru görünürken altındaki değer başka bir
-palete ait olabilir; kod okunduğunda tutarlı, ekranda değil. Bu yüzden palet
-`theme.scss`'ten çıkarıldı ve her değer tek tek karşılığıyla eşleştirildi.
+Adopting a design system is not a matter of renaming CSS variables. A name like
+`--brand-light` can look right while the value underneath still belongs to a
+different palette: consistent when you read the code, not on screen. So the
+palette was extracted from `theme.scss` and every value matched to its
+counterpart one by one.
 
-Aynı sebeple `text-white` gibi kalıplara dikkat etmek gerekti: altın zeminde
-beyaz metin kontrast eşiğini geçmiyor. Renk değişimi mekanik yapılırsa bu tür
-erişilebilirlik hataları sessizce içeri sızar.
+For the same reason patterns like `text-white` needed attention: white text on a
+gold background does not clear the contrast threshold. Do the colour swap
+mechanically and accessibility failures like that slip in silently.
 
 ## Banner
 
-`banner.png` — 1280×640 (GitHub sosyal önizleme standardı), 2× yoğunlukta
-render edilir.
+`banner.png` — 1280×640 (the GitHub social preview standard), rendered at 2×
+density.
 
-Yeniden üretmek için:
+To regenerate it:
 
 ```bash
 cd docs/brand
@@ -57,12 +60,12 @@ npm i playwright && npx playwright install chromium
 node render.mjs          # banner.html -> banner.png
 ```
 
-Tasarım kuralları (banner-design skill):
-- Kritik içerik merkezi %75'lik güvenli alanda
-- En fazla iki yazı tipi (Inter + Inconsolata)
-- Başlık ≥ 32px, gövde ≥ 16px
-- Metin/zemin kontrastı ≥ 4.5:1
-- Tek odak noktası
+Design rules (banner-design skill):
+- Critical content sits inside the central 75% safe area
+- At most two typefaces (Inter + Inconsolata)
+- Headline ≥ 32px, body ≥ 16px
+- Text/background contrast ≥ 4.5:1
+- A single focal point
 
-Sağdaki çizgi dekoratif değil: teal bir başlangıç noktasından altın bir varışa
-giden koşu rotası — ürünün ne yaptığını tek görselde anlatıyor.
+The line on the right is not decoration: it is a running route from a teal start
+point to a gold finish — it says what the product does in one image.

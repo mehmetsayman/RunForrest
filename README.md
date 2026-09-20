@@ -105,16 +105,16 @@ extension set to **Testnet** (Freighter recommended).
 **The 60-second path — no crypto required to start:**
 
 1. **Connect.** If the account is brand new it does not exist on chain yet; the
-   wallet menu offers **"Hesabını etkinleştir"** to create it.
+   wallet menu offers **"Activate your account"** to create it.
 2. **Enable USDC** — a one-time trustline, offered in the same menu.
 3. **Leaderboard → Join.** With no USDC, the lira deposit sheet opens *in place*.
 4. **Load lira.** Pick an amount; you get an IBAN and a reference code. This is a
-   sandbox anchor, so press *"Havaleyi yaptım"* to play the bank. Real testnet USDC
+   sandbox anchor, so press *"I sent the transfer"* to play the bank. Real testnet USDC
    arrives in your wallet.
 5. **Join completes automatically** and the fee lands in the vault.
 6. **Record a run** at `/run` — live GPS or GPX import. Confirm the city, save.
 7. **`/mint`** now shows a real on-chain city badge.
-8. **Profile → "IBAN'a çek"** sends USDC back out as lira.
+8. **Profile → "Withdraw to IBAN"** sends USDC back out as lira.
 
 > The interface is in Turkish. The target user is a runner in Istanbul paying in
 > lira, not a crypto-native reading English docs — that choice is the product.
@@ -283,7 +283,7 @@ disabled and every on-chain feature still works.
 parallel `challenges` table is tempting, but it produces two realities — one that
 collects money and one with an `entry_fee` column that collects nothing. Supabase
 stores only cosmetic metadata (title, description, location) keyed by the on-chain
-challenge id. With no database, challenges display as "Yarışma #N" and nothing
+challenge id. With no database, challenges display as "Challenge #N" and nothing
 breaks.
 
 **No invented numbers anywhere in the UI.** The landing page shows contract count,
@@ -388,7 +388,7 @@ in the read layer.
 
 More findings — verified anchor response shapes, the SEP-38 direction trap, GPS
 accuracy handling, map tile licensing — are in
-[`docs/TEKNIK-NOTLAR.md`](docs/TEKNIK-NOTLAR.md).
+[`docs/TECHNICAL-NOTES.md`](docs/TECHNICAL-NOTES.md).
 
 ---
 
@@ -467,7 +467,7 @@ stellar contract deploy --wasm <path>.optimized.wasm \
 > Cargo generates (`os error 4551`), so contracts are built inside WSL2. Turning
 > Smart App Control off is irreversible — don't. Also, `CARGO_TARGET_DIR` must be an
 > ASCII path if you build on Windows: the mingw linker cannot handle non-ASCII
-> characters. Details in [`docs/TEKNIK-NOTLAR.md`](docs/TEKNIK-NOTLAR.md).
+> characters. Details in [`docs/TECHNICAL-NOTES.md`](docs/TECHNICAL-NOTES.md).
 
 ---
 
@@ -487,7 +487,7 @@ stellar contract deploy --wasm <path>.optimized.wasm \
 │       └── app/api/attest/  # server-side run attestation
 ├── scripts/                 # live-testnet verification scripts
 ├── docs/
-│   ├── TEKNIK-NOTLAR.md     # verified findings: addresses, response shapes, dead ends
+│   ├── TECHNICAL-NOTES.md   # verified findings: addresses, response shapes, dead ends
 │   └── brand/               # palette source, banner, design rationale
 └── deployments.json         # deployed contract IDs
 ```

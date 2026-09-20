@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * Yarışma listesi ve oluşturma — ZİNCİR kaynaklı.
+ * Challenge list and creation — sourced from CHAIN.
  *
- * Tek kaynak `runforrest_challenge` kontratı. Yarışmayı veritabanında da tutmak
- * cazip görünüyor ama iki ayrı gerçeklik yaratır: biri para tahsil eden
- * kontrat, biri `entry_fee` sütunu olup hiçbir şey tahsil etmeyen tablo.
- * O yüzden yarışmanın kendisi yalnızca zincirde; Supabase kozmetik üstveriyi
- * tutuyor (başlık, açıklama, konum) — GPS poligonunda yapılan ayrımın aynısı:
- * para ve itibar zincirde, süs veritabanında. Supabase yapılandırılmamışsa
- * yarışmalar "Yarışma #N" olarak görünür ve hiçbir şey kırılmaz.
+ * The `runforrest_challenge` contract is the only source. Mirroring challenges
+ * into a database is tempting but creates two realities: a contract that
+ * collects money, and a table with an `entry_fee` column that collects nothing.
+ * So the challenge itself lives only on chain and Supabase holds cosmetic
+ * metadata (title, description, location) — the same split as the GPS route:
+ * money and reputation on chain, decoration in the database. Without Supabase
+ * challenges simply show as "Challenge #N" and nothing breaks.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,7 @@ import { challenges as onchain, fromStroops } from "@/lib/stellar/contracts";
 import type { Challenge as ChainChallenge } from "@/lib/stellar/contracts";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
-/** Zincirdeki yarışma + (varsa) veritabanındaki üstveri. */
+/** The on-chain challenge plus its database metadata, when present. */
 export type ChallengeView = {
   id: number;
   chain: ChainChallenge;
@@ -25,12 +25,12 @@ export type ChallengeView = {
   description: string | null;
   location: string | null;
   level: string;
-  /** Gösterim için: "10" gibi. */
+  /** For display, e.g. "10". */
   entryFeeUsdc: string;
   poolUsdc: string;
   participants: number;
   isOpen: boolean;
-  /** Bu cüzdan katıldı mı? */
+  /** Has this wallet joined? */
   joined: boolean;
 };
 
@@ -58,7 +58,7 @@ async function saveMeta(m: Meta): Promise<void> {
   try {
     await supabase.from("challenge_meta").upsert(m);
   } catch {
-    /* üstveri kozmetik — kaydedilemezse yarışma yine de zincirde var */
+    /* metadata is cosmetic — if it fails to save, the challenge still exists on chain */
   }
 }
 
@@ -67,9 +67,9 @@ export type CreateChallengeInput = {
   description?: string;
   location?: string;
   level?: string;
-  /** USDC, ondalıklı: "10" */
+  /** USDC with decimals, e.g. "10" */
   entryFeeUsdc: string;
-  /** Hedef mesafe, kilometre. */
+  /** Target distance, in kilometres. */
   targetKm: number;
   startDate: string;
   endDate: string;
@@ -96,10 +96,10 @@ export function useChallenges(viewer?: string | null) {
           return {
             id,
             chain: challenge,
-            title: m?.title ?? `Yarışma #${id}`,
+            title: m?.title ?? `Challenge #${id}`,
             description: m?.description ?? null,
             location: m?.location ?? null,
-            level: m?.level ?? "Herkes",
+            level: m?.level ?? "All levels",
             entryFeeUsdc: fromStroops(challenge.entry_fee),
             poolUsdc: fromStroops(
               challenge.status === "Finalized"
@@ -121,11 +121,11 @@ export function useChallenges(viewer?: string | null) {
   }, [viewer]);
 
   /**
-   * Mount'ta ve bağımlılık değiştiğinde zincirden veri çeker.
+   * Fetches from chain on mount and whenever a dependency changes.
    *
-   * Kural setState'i effect içinde görüp uyarıyor; buradaki senkron çağrı
-   * yalnızca "yükleniyor" bayrağı, asıl veri await sonrası yazılıyor.
-   * Dış bir sistemden (Soroban RPC) veri çekmek effect'in tam da amacı.
+   * The lint rule flags setState inside an effect; the synchronous call here is
+   * only the "loading" flag — the real data is written after the await.
+   * Fetching from an external system (Soroban RPC) is exactly what effects are for.
    */
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -133,8 +133,8 @@ export function useChallenges(viewer?: string | null) {
   }, [fetchChallenges]);
 
   /**
-   * Yarışmayı ZİNCİRDE oluşturur, sonra üstveriyi kaydeder.
-   * Sıra önemli: zincir kaynaktır, üstveri ona bağlanır.
+   * Creates the challenge ON CHAIN, then saves the metadata.
+   * The order matters: the chain is the source, metadata attaches to it.
    */
   const createChallenge = useCallback(
     async (creator: string, input: CreateChallengeInput) => {
@@ -165,7 +165,7 @@ export function useChallenges(viewer?: string | null) {
     [fetchChallenges],
   );
 
-  /** Katılım ücretini zincirde öder ve vault'a yatırır. */
+  /** Pays the entry fee on chain and deposits it into the vault. */
   const joinChallenge = useCallback(
     async (challengeId: number, runner: string) => {
       await onchain.join(challengeId, runner);

@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Yarışma durumu ve katılım akışı.
+ * Challenge state and the join flow.
  *
- * Leaderboard artık hardcoded bir diziden değil, kontrattan okunuyor:
- * katılımcı listesi (`get_roster`) + her birinin mesafesi (`get_participant`).
+ * The leaderboard is read from the contract rather than a hardcoded array:
+ * the roster (`get_roster`) plus each runner's distance (`get_participant`).
  *
- * Katılımın kritik yanı: koşucunun USDC'si yetmiyorsa akış kırılmıyor,
- * `needsFunding` true dönüyor ve arayüz TRY yükleme ekranını aynı yerde açıyor.
- * Ramp ayrı bir sayfa değil, katılımın içinde.
+ * The critical part of joining: if the runner is short on USDC the flow does
+ * not break — `needsFunding` comes back true and the UI opens the fiat deposit
+ * sheet in place. The ramp is not a separate page; it lives inside the join.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -48,9 +48,9 @@ export function useChallenge(challengeId: number | null) {
   const [lastHash, setLastHash] = useState<string | null>(null);
 
   /**
-   * Zaman, render sırasında okunamaz: Date.now() saf olmayan bir çağrı ve
-   * yarışma sayfa açıkken bittiğinde arayüz bunu fark etmez. Dakikada bir
-   * tikleyen bir state ile hem saflık korunuyor hem de bitiş anı yakalanıyor.
+   * Time cannot be read during render: Date.now() is impure, and a challenge
+   * that ends while the page is open would go unnoticed. A state that ticks
+   * keeps render pure and catches the moment the window closes.
    */
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => {
@@ -94,11 +94,11 @@ export function useChallenge(challengeId: number | null) {
   }, [challengeId, address]);
 
   /**
-   * Mount'ta ve bağımlılık değiştiğinde zincirden veri çeker.
+   * Fetches from chain on mount and whenever a dependency changes.
    *
-   * Kural setState'i effect içinde görüp uyarıyor; buradaki senkron çağrı
-   * yalnızca "yükleniyor" bayrağı, asıl veri await sonrası yazılıyor.
-   * Dış bir sistemden (Soroban RPC) veri çekmek effect'in tam da amacı.
+   * The lint rule flags setState inside an effect; the synchronous call here is
+   * only the "loading" flag — the real data is written after the await.
+   * Fetching from an external system (Soroban RPC) is exactly what effects are for.
    */
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -106,20 +106,20 @@ export function useChallenge(challengeId: number | null) {
   }, [load]);
 
   /**
-   * Katılmayı dener. Ön koşullar sağlanmıyorsa hata fırlatmak yerine
-   * arayüzün ne yapması gerektiğini söyleyen bir sonuç döner.
+   * Attempts to join. Rather than throwing when a precondition is unmet, it
+   * returns a result telling the UI what to do next.
    */
   const join = useCallback(async (): Promise<JoinOutcome> => {
-    if (!address) return { ok: false, error: "Önce cüzdanı bağlayın" };
+    if (!address) return { ok: false, error: "Connect your wallet first" };
     if (challengeId === null || !challenge)
-      return { ok: false, error: "Yarışma yüklenmedi" };
+      return { ok: false, error: "Challenge not loaded" };
 
     if (!hasTrustline) return { ok: false, needsTrustline: true };
 
-    // Bakiye ZİNCİRDEN taze okunuyor, context'teki değerden değil.
-    // Ramp bittiğinde katılıma devam ediliyor; o anda context henüz
-    // tazelenmemiş olabiliyor ve kullanıcı parayı yatırdığı halde
-    // "yeterli USDC yok" uyarısı alıp yükleme ekranına geri düşüyordu.
+    // The balance is read FRESH FROM CHAIN, not from the context value.
+    // The join resumes right after the ramp, when the context may not have
+    // refreshed yet — which sent the runner back to the deposit sheet with
+    // the money already in their wallet.
     const live = await usdcBalance(address);
     if (live < challenge.entry_fee) {
       return {
@@ -162,7 +162,7 @@ export function useChallenge(challengeId: number | null) {
     }
   }, [address, challengeId, load, refreshWallet]);
 
-  /** Bitiş zamanı geçtiyse herkes kapatabilir — kimse kilitli kalmasın. */
+  /** Once the window closes anyone can finalize, so nobody stays locked in. */
   const finalize = useCallback(async () => {
     if (!address || challengeId === null) return null;
     setBusy(true);
@@ -204,7 +204,7 @@ export function useChallenge(challengeId: number | null) {
   };
 }
 
-/** Açık olan en güncel yarışmayı bulur; yoksa en sonuncuyu döndürür. */
+/** Finds the most recent open challenge; falls back to the last one. */
 export function useActiveChallengeId() {
   const [id, setId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -218,7 +218,7 @@ export function useActiveChallengeId() {
           if (alive) setId(null);
           return;
         }
-        // Sondan başa tara: açık olan ilk yarışma aktiftir.
+        // Scan backwards: the first open challenge is the active one.
         for (let i = n - 1; i >= 0; i--) {
           const c = await challenges.get(i);
           const open =

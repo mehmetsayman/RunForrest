@@ -60,16 +60,16 @@
 
 :root {
   /* Stellar Design System v4.0.2 — sds-theme-dark
-     Değerler @stellar/design-system paketinden alındı, tahmin değil.
-     Marka rengi altın (#fdda24) — Stellar'ın imza tonu. */
+     The values come from the @stellar/design-system package, not from guesswork.
+     The brand colour is gold (#fdda24), Stellar's signature tone. */
   --background: #000000;
   --foreground: #ededed;              /* gray-12 */
   --card: rgba(255, 255, 255, 0.035);
   --card-foreground: #ededed;
   --popover: #161616;                 /* gray-01 */
   --popover-foreground: #ededed;
-  --primary: #fdda24;                 /* gold-09 — Stellar imzası */
-  --primary-foreground: #161616;      /* altın üstünde koyu metin */
+  --primary: #fdda24;                 /* gold-09 — the Stellar signature */
+  --primary-foreground: #161616;      /* dark text on gold */
   --secondary: rgba(253, 218, 36, 0.12);
   --secondary-foreground: #ffef5c;    /* gold-10 */
   --muted: rgba(255, 255, 255, 0.055);
@@ -84,7 +84,7 @@
   --input: rgba(255, 255, 255, 0.1);
   --ring: #fdda24;
 
-  /* Marka tonları — sınıf adları korundu, değerler Stellar'a geçti */
+  /* Brand tones — class names kept, values moved to Stellar's palette */
   --stellar: #fdda24;                 /* gold-09 */
   --stellar-light: #ffef5c;           /* gold-10 */
   --stellar-muted: #f0c000;           /* gold-11 */
@@ -192,8 +192,8 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Başlıklar da Inter — Stellar tek aile kullanıyor; ayrım ağırlık ve
-     harf aralığıyla yapılıyor, ikinci bir aileyle değil. */
+  /* Headings are Inter too — Stellar uses a single family and separates
+     roles by weight and letter spacing, not by a second family. */
   .font-heading {
     font-family: var(--font-inter), system-ui, sans-serif;
     letter-spacing: -0.02em;
@@ -338,23 +338,23 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Harita altlığı — OSM karolarını karanlık temaya uyarlama.
+   Map base layer — adapting OSM tiles to the dark theme.
 
-   CARTO'nun dark_all altlığı artık anahtarsız kullanımda karonun
-   İÇİNE "API KEY REQUIRED" filigranı basıyor. OSM anahtarsız ve
-   filigransız ama açık temalı; invert + hue-rotate ile koyulaştırıyoruz.
+   CARTO's dark_all layer now burns an "API KEY REQUIRED" watermark
+   INTO the tile when used without a key. OSM needs no key and carries
+   no watermark, but ships light; invert + hue-rotate darkens it.
 
-   Filtre YALNIZCA karo katmanına (.leaflet-tile-pane) uygulanır.
-   Rota çizgisi ve işaretçiler overlay-pane'de olduğu için Stellar
-   altını ve teal renklerini gerçek haliyle korur.
+   The filter applies ONLY to the tile layer (.leaflet-tile-pane).
+   The route line and markers sit in overlay-pane, so they keep
+   Stellar's gold and teal exactly as they are.
    ───────────────────────────────────────────────────────────── */
 .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(1.05) saturate(0.6);
 }
 
-/* Atıf kutusu OSM lisansı gereği görünür kalmalı; temaya uyarlıyoruz.
-   Kart köşeleri yuvarlatılmış ve overflow:hidden olduğu için kutu tam
-   kenara oturunca son harf kırpılıyordu — köşeden içeri alıyoruz. */
+/* The attribution box must stay visible under the OSM licence; we only
+   theme it. The card has rounded corners and overflow:hidden, so a box
+   flush to the edge had its last letter clipped — we inset it. */
 .leaflet-control-attribution {
   background: rgba(0, 0, 0, 0.62) !important;
   color: #a0a0a0 !important;

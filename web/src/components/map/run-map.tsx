@@ -19,9 +19,9 @@ type LatLng = [number, number];
 
 type RunMapProps = {
   positions: LatLng[];
-  /** Henüz rota yokken haritanın bakacağı canlı konum. */
+  /** Live position the map looks at while there is no route yet. */
   currentPosition?: LatLng | null;
-  /** Son okumanın doğruluğu (metre) — haritada belirsizlik dairesi olarak. */
+  /** Accuracy of the last reading (metres) — drawn as an uncertainty circle. */
   accuracy?: number | null;
   center?: LatLng;
   zoom?: number;
@@ -33,11 +33,11 @@ type RunMapProps = {
 };
 
 /**
- * Konumu takip eder ama kullanıcının iradesine saygı duyar.
+ * Follows the position, but defers to the user.
  *
- * Kullanıcı haritayı elle kaydırdığı ya da yakınlaştırdığı anda takip durur —
- * yoksa her GPS okumasında harita geri zıplar ve incelemek imkânsız olur.
- * Takibe dönmek için "merkeze al" düğmesi var.
+ * The moment the user drags the map, following stops — otherwise the map
+ * snaps back on every GPS reading and inspecting the route is impossible.
+ * The "recenter" button brings following back.
  */
 function Follower({
   position,
@@ -52,10 +52,10 @@ function Follower({
 }) {
   const map = useMap();
 
-  // Takibi YALNIZCA sürükleme bırakır — "başka yere bakmak istiyorum"un
-  // tek net işareti bu. Yakınlaştırma takibi bozmaz: zoom yaparken de
+  // ONLY a drag releases following — it is the one unambiguous signal for
+  // "I want to look elsewhere". Zooming does not break it: a user zooming
   // kendini izlemek istersin. (zoomstart programatik zoom'da da tetikleniyor,
-  // o yüzden sinyal olarak güvenilmez.)
+  // in usually still wants to follow, so zoom is an unreliable signal.)
   useMapEvents({ dragstart: onUserMove });
 
   useEffect(() => {
@@ -64,7 +64,7 @@ function Follower({
     }
   }, [map, position, enabled]);
 
-  // "Merkeze al" basıldığında konuma dön.
+  // Return to the position when "recenter" is pressed.
   useEffect(() => {
     if (recenterSignal > 0 && position) {
       map.setView(position, Math.max(map.getZoom(), 16), { animate: true });
@@ -84,7 +84,7 @@ function BoundsAdjuster({ positions }: { positions: LatLng[] }) {
   return null;
 }
 
-/** Zoom düğmeleri — Leaflet'in varsayılanı açık temalı ve küçük. */
+/** Zoom buttons — Leaflet's defaults are light-themed and small. */
 function ZoomButtons() {
   const map = useMap();
   const btn =
@@ -92,10 +92,10 @@ function ZoomButtons() {
     "bg-black/70 text-white backdrop-blur transition-colors hover:bg-black/85 active:scale-95";
   return (
     <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-1.5">
-      <button type="button" aria-label="Yakınlaştır" className={btn} onClick={() => map.zoomIn()}>
+      <button type="button" aria-label="Zoom in" className={btn} onClick={() => map.zoomIn()}>
         <Plus className="size-4" />
       </button>
-      <button type="button" aria-label="Uzaklaştır" className={btn} onClick={() => map.zoomOut()}>
+      <button type="button" aria-label="Zoom out" className={btn} onClick={() => map.zoomOut()}>
         <Minus className="size-4" />
       </button>
     </div>
@@ -127,10 +127,10 @@ export function RunMap({
   };
 
   /**
-   * Merkez önceliği: açık istek → canlı konum → rotanın son noktası → İstanbul.
+   * Centre priority: explicit request → live position → last route point → Istanbul.
    *
-   * Son çare sabit bir koordinat olmak zorunda; konum izni gelene kadar
-   * haritanın bir yere bakması gerekiyor.
+   * The last resort has to be a fixed coordinate: the map needs to look
+   * somewhere until location permission arrives.
    */
   const live = currentPosition ?? positions[positions.length - 1] ?? null;
   const mapCenter: LatLng = center ?? live ?? [41.0082, 28.9784];
@@ -150,8 +150,8 @@ export function RunMap({
         className="h-full w-full"
         zoomControl={false}
         attributionControl={false}
-        /* Yakınlaştırma HER ZAMAN açık — koşu sırasında da. Kilitli bir
-           harita kullanıcının kendi rotasını incelemesini engeller. */
+        /* Zoom is ALWAYS enabled, mid-run included. A locked map stops the
+           user from inspecting their own route. */
         dragging={interactive}
         scrollWheelZoom={interactive}
         touchZoom
@@ -160,13 +160,13 @@ export function RunMap({
         <AttributionControl position="bottomright" prefix={false} />
 
         {/*
-          Altlık OpenStreetMap: anahtarsız ve filigransız. (CARTO'nun dark_all
-          altlığı anahtarsız kullanımda karo görselinin İÇİNE "API KEY REQUIRED"
-          basıyor — HTTP 200 döndüğü için kod hata da görmüyor.)
-          OSM açık temalı geldiği için karanlık arayüze CSS ile uyarlanıyor
+          Base layer is OpenStreetMap: no key, no watermark. (CARTO's dark_all
+          layer now burns "API KEY REQUIRED" INTO the tile image when used
+          without a key — and returns HTTP 200, so the code sees no error.)
+          OSM ships light, so CSS adapts it to the dark interface.
           (bkz. globals.css .leaflet-tile-pane).
-          Filtre yalnızca karo katmanına uygulanır — rota ve işaretçiler
-          gerçek renklerinde kalır.
+          The filter applies to the tile layer only — the route and markers
+          keep their real colours.
         */}
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -174,8 +174,8 @@ export function RunMap({
           maxZoom={19}
         />
 
-        {/* GPS belirsizlik dairesi — kullanıcı sinyalin ne kadar iyi
-            olduğunu görüyor. Kötü sinyalde mesafe sayılmıyor. */}
+        {/* GPS uncertainty circle — the user can see how good the signal
+            is. On a poor signal, distance is not counted. */}
         {live && accuracy && accuracy > 0 && (
           <Circle
             center={live}
@@ -230,7 +230,7 @@ export function RunMap({
           </>
         )}
 
-        {/* Rota henüz yokken bile canlı konumu göster — harita boş kalmasın. */}
+        {/* Show the live position even before a route exists, so the map is never blank. */}
         {showMarkers && positions.length === 0 && currentPosition && (
           <CircleMarker
             center={currentPosition}
@@ -258,7 +258,7 @@ export function RunMap({
         <ZoomButtons />
       </MapContainer>
 
-      {/* Takip bırakıldıysa geri dönüş yolu */}
+      {/* A way back, once following has been released */}
       {followUser && userMoved && (
         <button
           type="button"

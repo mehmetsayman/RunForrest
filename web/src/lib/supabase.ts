@@ -1,13 +1,15 @@
 /**
- * Supabase — GPS rotaları ve koşu geçmişi.
+ * Supabase — GPS routes and run history.
  *
- * İş bölümü: ZİNCİR mesafeyi, katılımı, havuzu ve rozetleri tutar (para ve
- * itibar oradadır). Supabase yalnızca rota poligonunu ve koşu detaylarını
- * tutar — binlerce GPS noktasını zincire yazmak hem anlamsız hem pahalı.
+ * The division of labour: the CHAIN holds distance, participation, the pool
+ * and the badges (money and reputation live there). Supabase holds only the
+ * route polyline and run details — writing thousands of GPS points to chain
+ * would be both pointless and expensive.
  *
- * İstemci TEMBEL kuruluyor: yapılandırma yoksa modül yüklenirken patlamak
- * yerine, çağrıldığı yerde anlaşılır bir hata veriyor. Böylece uygulama
- * Supabase olmadan da derleniyor ve zincire dayalı her özellik çalışıyor.
+ * The client is created LAZILY: rather than throwing while the module loads,
+ * it raises a clear error at the call site when configuration is missing. That
+ * way the app still builds without Supabase and every chain-backed feature
+ * keeps working.
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -15,7 +17,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-/** Koşu geçmişi özellikleri kullanılabilir mi? */
+/** Are the run-history features available? */
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
 let client: SupabaseClient | null = null;
@@ -23,9 +25,9 @@ let client: SupabaseClient | null = null;
 function getClient(): SupabaseClient {
   if (!isSupabaseConfigured) {
     throw new Error(
-      "Supabase yapılandırılmamış: NEXT_PUBLIC_SUPABASE_URL ve " +
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY gerekli. Koşu geçmişi devre dışı; " +
-        "zincire dayalı özellikler etkilenmez.",
+      "Supabase is not configured: NEXT_PUBLIC_SUPABASE_URL and " +
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY are required. Run history is disabled; " +
+        "chain-backed features are unaffected.",
     );
   }
   if (!client) client = createClient(url!, anonKey!);
@@ -33,8 +35,8 @@ function getClient(): SupabaseClient {
 }
 
 /**
- * Supabase istemcisi. `supabase.from(...)` çağrısı, yapılandırma yoksa
- * anlaşılır bir hata fırlatır — sessizce yanlış veri döndürmez.
+ * The Supabase client. A `supabase.from(...)` call raises a clear error when
+ * unconfigured, rather than silently returning wrong data.
  */
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {

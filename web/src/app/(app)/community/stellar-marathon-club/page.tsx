@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -48,7 +47,7 @@ const upcomingRuns = [
     date: "May 18, Sun",
     time: "7:00 AM",
     distance: "21 km",
-    location: "Çanakkale Kordon → Saat Kulesi",
+    location: "Çanakkale Waterfront → Clock Tower",
     pace: "5:00 – 5:30/km",
     spots: 18,
     total: 50,
@@ -59,7 +58,7 @@ const upcomingRuns = [
     date: "May 20, Tue",
     time: "6:30 AM",
     distance: "10 km",
-    location: "Truva Yolu Parkuru",
+    location: "Troy Road Route",
     pace: "4:30 – 4:50/km",
     spots: 12,
     total: 30,
@@ -81,7 +80,7 @@ const upcomingRuns = [
     date: "May 25, Sun",
     time: "6:00 AM",
     distance: "30 km",
-    location: "Çanakkale Sahil Koşusu",
+    location: "Çanakkale Coastal Run",
     pace: "5:10 – 5:40/km",
     spots: 8,
     total: 35,
@@ -101,7 +100,7 @@ const clubStats = [
 const milestones = [
   { title: "100K Club Milestone", date: "Apr 2026", description: "Club reached 100,000 collective km" },
   { title: "Global Expansion", date: "Mar 2026", description: "Members from 25+ countries" },
-  { title: "Stellar Pro Launch", date: "Jan 2026", description: "Rise In x Stellar Pro Hackathon'da kuruldu" },
+  { title: "Stellar Pro Launch", date: "Jan 2026", description: "Founded at the Rise In × Stellar Pro Hackathon" },
 ];
 
 function RoleBadge({ role }: { role: string }) {
@@ -158,16 +157,34 @@ export default function StellarMarathonClubPage() {
 
       {/* ─── HERO IMAGE ─── */}
       <div className="relative -mx-5 -mt-2 overflow-hidden rounded-b-3xl">
-        <div className="relative aspect-[16/10] w-full">
-          <Image
-            src="/stellar-marathon-club.png"
-            alt="Stellar Marathon Club ekibi"
-            fill
-            className="object-cover"
-            priority
-          />
+        {/* Brand gradient plus the running-route motif. A generated visual
+            rather than a photograph — a real club photo can replace it when
+            there is one. */}
+        <div className="relative aspect-[16/10] w-full bg-[#0a0a0a]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(253,218,36,0.18),transparent_60%),radial-gradient(ellipse_at_20%_80%,rgba(0,194,215,0.14),transparent_55%)]" />
+          <svg
+            className="absolute inset-0 h-full w-full"
+            viewBox="0 0 400 250"
+            fill="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="clubRoute" x1="0" y1="250" x2="400" y2="0">
+                <stop offset="0%" stopColor="#00c2d7" stopOpacity=".35" />
+                <stop offset="55%" stopColor="#9e8cfc" stopOpacity=".6" />
+                <stop offset="100%" stopColor="#fdda24" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M20 225 C 90 185, 60 145, 140 130 S 250 110, 220 75 S 250 35, 355 25"
+              stroke="url(#clubRoute)"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            <circle cx="20" cy="225" r="5" fill="#00c2d7" opacity=".85" />
+            <circle cx="355" cy="25" r="7" fill="#fdda24" />
+          </svg>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-[#ffb224]/10" />
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-5">
@@ -185,7 +202,7 @@ export default function StellarMarathonClubPage() {
                 Çanakkale / Global
                 <span className="mx-1">·</span>
                 <Calendar className="size-3" />
-                Stellar Pro Hackathon 2026&apos;da kuruldu
+                Founded at Stellar Pro Hackathon 2026
               </p>
             </div>
             <button
@@ -206,9 +223,9 @@ export default function StellarMarathonClubPage() {
       {/* ─── DESCRIPTION ─── */}
       <GlassCard strong className="p-5">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Stellar üzerinde inşa eden mesafe koşucuları. We run together every Sunday and push each
-          other to go further. Stellar Pro Hackathon&apos;da doğdu, artık küresel bir koşu topluluğu
-          on-chain.
+          Distance runners building on Stellar. We run together every Sunday and push each
+          other to go further. Born at the Stellar Pro Hackathon, now a global running
+          community — every run verified on-chain.
         </p>
         <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">

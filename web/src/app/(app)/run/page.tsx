@@ -69,16 +69,16 @@ export default function RunPage() {
 
   const distanceKm = gps.stats.distance / 1000;
 
-  /* ── zincire yazma ── */
+  /* ── writing to chain ── */
   const attest = useAttest();
   const { id: activeChallengeId } = useActiveChallengeId();
   const [city, setCity] = useState("");
-  // Tahminin bir kez çalışmasını sağlayan bayrak. State değil ref:
-  // ekranda hiçbir şeyi değiştirmiyor, sadece tekrarı engelliyor —
-  // state olsaydı gereksiz bir render turu daha açardı.
+  // A flag so the guess runs only once. A ref, not state: it changes
+  // nothing on screen and only prevents a repeat — as state it would
+  // cost an extra render pass for nothing.
   const cityGuessed = useRef(false);
 
-  // Koşu bitince ilk GPS noktasından şehri tahmin et; kullanıcı onaylar/düzeltir.
+  // After the run, guess the city from the first GPS point; the user confirms or corrects it.
   useEffect(() => {
     if (cityGuessed.current || gps.state !== "complete") return;
     const first = gps.stats.positions[0];
@@ -90,8 +90,8 @@ export default function RunPage() {
   }, [gps.state, gps.stats.positions]);
 
   /**
-   * Koşuyu kaydeder: rota Supabase'e (varsa), mesafe ve rozet zincire.
-   * Supabase yapılandırılmamışsa zincir yazımı yine de yapılır.
+   * Saves the run: the route to Supabase (when present), distance and badge to chain.
+   * The chain write still happens when Supabase is not configured.
    */
   const commitRun = async (run: {
     distanceMeters: number;
@@ -262,7 +262,7 @@ export default function RunPage() {
             <button
               type="button"
               onClick={gps.start}
-              aria-label="Koşuyu başlat"
+              aria-label="Start run"
               className="mt-6 flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#ffb224] text-[#161616] shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 neon-glow"
             >
               <Play className="size-8 ml-1" />
@@ -537,7 +537,7 @@ export default function RunPage() {
           {saved && (
             <NeonButton className="w-full justify-center gap-2" size="lg" href="/mint">
               <Zap className="size-4" />
-              Stellar&apos;da doğrula
+              Verify on Stellar
             </NeonButton>
           )}
 
@@ -575,8 +575,8 @@ export default function RunPage() {
               height="h-72"
               followUser={gps.state === "tracking"}
               showMarkers
-              /* Koşu sırasında da gezilebilir: kullanıcı kaydırınca takip
-                 durur, "Merkeze al" ile geri döner. */
+              /* Pannable mid-run too: dragging stops following, and the
+                 "recenter" button brings it back. */
               interactive
             />
             {/* GPS accuracy indicator */}
@@ -586,7 +586,7 @@ export default function RunPage() {
                 gps.state === "tracking" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
               )} />
               <span className="text-[10px] font-medium">
-                {gps.state === "tracking" ? "GPS aktif" : "Duraklatıldı"}
+                {gps.state === "tracking" ? "GPS active" : "Paused"}
                 {gps.stats.accuracy != null && (
                   <span className="ml-1 text-muted-foreground">
                     ±{Math.round(gps.stats.accuracy)}m
@@ -656,7 +656,7 @@ export default function RunPage() {
                 <button
                   type="button"
                   onClick={gps.stop}
-                  aria-label="Koşuyu bitir"
+                  aria-label="Finish run"
                   className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/30 transition-all hover:scale-105 active:scale-90"
                 >
                   <Square className="size-8" />
@@ -667,7 +667,7 @@ export default function RunPage() {
                 <button
                   type="button"
                   onClick={gps.resume}
-                  aria-label="Devam et"
+                  aria-label="Resume"
                   className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#ffb224] text-[#161616] shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-90 neon-glow"
                 >
                   <Play className="size-8 ml-1" />
@@ -675,7 +675,7 @@ export default function RunPage() {
                 <button
                   type="button"
                   onClick={gps.stop}
-                  aria-label="Koşuyu bitir"
+                  aria-label="Finish run"
                   className="flex size-16 items-center justify-center rounded-full border-2 border-red-500/30 bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20 active:scale-90"
                 >
                   <Square className="size-6" />
@@ -773,31 +773,31 @@ export default function RunPage() {
             </GlassCard>
           )}
 
-          {/* Şehir — rozet buna göre veriliyor, o yüzden kullanıcı onaylıyor */}
+          {/* City — the badge is keyed to it, so the user confirms it */}
           {!attest.result && (
             <GlassCard className="p-4">
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Koştuğun şehir
+                City you ran in
               </label>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Örn. İstanbul"
+                placeholder="e.g. Istanbul"
                 className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/40"
               />
               <p className="mt-1.5 text-[10px] text-muted-foreground">
-                Şehir rozeti bu isme yazılır. Konumdan tahmin edildi — yanlışsa düzelt.
+                The city badge is written to this name. Guessed from your location — correct it if it is wrong.
               </p>
             </GlassCard>
           )}
 
-          {/* Kaydet ve zincire yaz */}
+          {/* Save and write to chain */}
           {attest.result ? (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
               <Check className="mx-auto mb-2 size-6 text-emerald-400" />
-              <p className="text-sm font-semibold text-emerald-400">Koşu kaydedildi</p>
+              <p className="text-sm font-semibold text-emerald-400">Run saved</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Mesafen Stellar üzerinde doğrulanabilir
+                Your distance is verifiable on Stellar
               </p>
             </div>
           ) : (
@@ -810,26 +810,26 @@ export default function RunPage() {
               {saving || attest.busy ? (
                 <>
                   <div className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  {attest.busy ? "Zincire yazılıyor…" : "Kaydediliyor…"}
+                  {attest.busy ? "Writing to chain…" : "Saving…"}
                 </>
               ) : (
                 <>
                   <Zap className="size-4" />
-                  {address ? "Kaydet ve Stellar&apos;a yaz" : "Önce cüzdanı bağla"}
+                  {address ? "Save and write to Stellar" : "Connect your wallet first"}
                 </>
               )}
             </button>
           )}
-          {/* Zincir durumu */}
+          {/* Chain status */}
           {attest.busy && (
             <div className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-center">
-              <p className="text-xs text-primary">Koşu zincire yazılıyor…</p>
+              <p className="text-xs text-primary">Writing the run to chain…</p>
             </div>
           )}
 
           {attest.result && (
             <GlassCard className="space-y-2 p-4">
-              <p className="text-sm font-semibold text-emerald-400">Zincire yazıldı</p>
+              <p className="text-sm font-semibold text-emerald-400">Written to chain</p>
               {attest.result.badge && (
                 <a
                   href={`https://stellar.expert/explorer/testnet/tx/${attest.result.badge}`}
@@ -837,7 +837,7 @@ export default function RunPage() {
                   rel="noreferrer"
                   className="block truncate font-mono text-[10px] text-primary hover:underline"
                 >
-                  rozet · {attest.result.badge.slice(0, 24)}… ↗
+                  badge · {attest.result.badge.slice(0, 24)}… ↗
                 </a>
               )}
               {attest.result.progress && (
@@ -847,7 +847,7 @@ export default function RunPage() {
                   rel="noreferrer"
                   className="block truncate font-mono text-[10px] text-primary hover:underline"
                 >
-                  yarışma ilerlemesi · {attest.result.progress.slice(0, 24)}… ↗
+                  challenge progress · {attest.result.progress.slice(0, 24)}… ↗
                 </a>
               )}
               {attest.result.errors.length > 0 && (
@@ -874,7 +874,7 @@ export default function RunPage() {
           {attest.result?.badge && (
             <NeonButton className="w-full justify-center gap-2" size="lg" href="/mint">
               <Zap className="size-4" />
-              Rozetini gör
+              View your badge
             </NeonButton>
           )}
 

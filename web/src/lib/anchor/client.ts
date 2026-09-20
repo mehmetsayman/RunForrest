@@ -1,14 +1,14 @@
 /**
  * TR Mock Anchor istemcisi — SEP-1 / SEP-10 / SEP-12 / SEP-38 / SEP-6.
  *
- * Bu anchor SEP-24 (anchor-barındırmalı popup) KONUŞMAZ; SEP-6 (programatik) konuşur.
- * Bu yüzden ramp arayüzünü RunForrest'ın kendi içinde çiziyoruz — iframe yok, akış kesintisiz.
+ * This anchor does NOT speak SEP-24 (anchor-hosted popup); it speaks SEP-6 (programmatic).
+ * So the ramp UI is drawn inside RunForrest itself — no iframe, no broken flow.
  *
- * Anchor CORS'u `*` olarak açıyor, dolayısıyla tüm çağrılar doğrudan tarayıcıdan
- * yapılabiliyor; sunucu tarafı proxy'ye gerek yok. (Canlı doğrulandı.)
+ * The anchor sets CORS to `*`, so every call can be made straight from the
+ * browser; no server-side proxy is needed. (Verified live.)
  *
  * Referans skill: CheesecakeLabs/stellar-anchor-skill/SKILL.md
- *                 skills/standards/SKILL.md (SEP seçimi)
+ *                 skills/standards/SKILL.md (choosing the SEPs)
  */
 
 import { ANCHOR_HOME_DOMAIN } from "@/lib/stellar/config";
@@ -32,7 +32,7 @@ async function parse<T>(res: Response, endpoint: string): Promise<T> {
     body = JSON.parse(text);
   } catch {
     throw new AnchorError(
-      `Anchor JSON olmayan yanıt döndü: ${text.slice(0, 120)}`,
+      `The anchor returned a non-JSON response: ${text.slice(0, 120)}`,
       res.status,
       endpoint,
     );
@@ -55,23 +55,23 @@ async function parse<T>(res: Response, endpoint: string): Promise<T> {
 let infoCache: AnchorInfo | null = null;
 
 /**
- * stellar.toml'u okuyup endpoint'leri çıkarır.
+ * Reads stellar.toml and extracts the endpoints.
  *
- * Entegrasyonun tamamı iki değere dayanıyor: home domain + varlık kodu.
- * Geri kalan her şey burada keşfediliyor — mainnet'e geçerken sadece
- * home domain değişiyor, kod aynı kalıyor.
+ * The whole integration rests on two values: the home domain and the asset code.
+ * Everything else is discovered here, so moving to mainnet changes only the
+ * home domain — the code stays as it is.
  */
 export async function discover(): Promise<AnchorInfo> {
   if (infoCache) return infoCache;
 
   const res = await fetch(`${base}/.well-known/stellar.toml`);
   if (!res.ok) {
-    throw new AnchorError("stellar.toml okunamadı", res.status, "/.well-known");
+    throw new AnchorError("Could not read stellar.toml", res.status, "/.well-known");
   }
   const toml = await res.text();
   const key = (k: string) => toml.match(new RegExp(`^${k}="(.*)"`, "m"))?.[1];
 
-  // [[CURRENCIES]] bloğundan USDC'yi bul
+  // Find USDC in the [[CURRENCIES]] block
   const currency = toml.match(/code="(\w+)"\s*\n\s*issuer="(G[A-Z0-9]+)"/);
 
   const info: AnchorInfo = {
@@ -85,7 +85,7 @@ export async function discover(): Promise<AnchorInfo> {
   };
 
   if (!info.assetIssuer) {
-    throw new AnchorError("stellar.toml içinde USDC issuer bulunamadı");
+    throw new AnchorError("No USDC issuer found in stellar.toml");
   }
   infoCache = info;
   return info;
@@ -94,11 +94,11 @@ export async function discover(): Promise<AnchorInfo> {
 /* ──────────────────────────── SEP-10: auth ────────────────────────────── */
 
 /**
- * Kullanıcının Stellar anahtarıyla kimlik doğrular ve JWT döndürür.
+ * Authenticates with the user's Stellar key and returns a JWT.
  *
- * Non-custodial: anahtar kullanıcının kendisinde. Anchor bir challenge işlemi
- * gönderir, kullanıcı imzalar, anchor imzayı doğrulayıp token verir.
- * Parola yok, API anahtarı yok — kimlik, anahtarın kendisi.
+ * Non-custodial: the key stays with the user. The anchor sends a challenge
+ * transaction, the user signs it, and the anchor verifies it and issues a token.
+ * No password, no API key — the key itself is the identity.
  */
 export async function authenticate(
   account: string,
@@ -115,16 +115,16 @@ export async function authenticate(
   );
 
   if (!challenge.transaction) {
-    throw new AnchorError("Anchor challenge işlemi döndürmedi");
+    throw new AnchorError("The anchor returned no challenge transaction");
   }
 
-  // Challenge'ı anchor'ın kendi imza anahtarının ürettiğini doğrula.
-  // Bu kontrol olmadan sahte bir anchor bize imzalatabilir.
+  // Verify the challenge was produced by the anchor's own signing key.
+  // Without this check, a fake anchor could get us to sign for it.
   const { Transaction } = await import("@stellar/stellar-sdk");
   const tx = new Transaction(challenge.transaction, challenge.network_passphrase);
   if (signingKey && tx.source !== signingKey) {
     throw new AnchorError(
-      `Challenge kaynağı beklenen imza anahtarı değil (${tx.source})`,
+      `Challenge source is not the expected signing key (${tx.source})`,
     );
   }
 
@@ -139,7 +139,7 @@ export async function authenticate(
     "SEP-10 token",
   );
 
-  if (!token) throw new AnchorError("Anchor JWT döndürmedi");
+  if (!token) throw new AnchorError("The anchor returned no JWT");
   return token;
 }
 
@@ -148,8 +148,8 @@ const auth = (jwt: string) => ({ Authorization: `Bearer ${jwt}` });
 /* ───────────────────────────── SEP-12: KYC ────────────────────────────── */
 
 /**
- * KYC kaydı. Bu sandbox'ta otomatik onaylanır ve kişisel veri istemez.
- * Gerçek bir anchor'da burada belge/bilgi alanları döner — akış aynı kalır.
+ * KYC registration. In this sandbox it is auto-approved and asks for no personal data.
+ * A real anchor would return document and information fields here; the flow is the same.
  */
 export async function ensureCustomer(
   jwt: string,
@@ -175,7 +175,7 @@ export async function ensureCustomer(
 
 /* ──────────────────────────── SEP-38: kurlar ──────────────────────────── */
 
-/** Gösterim amaçlı canlı kur (bağlayıcı değil). Reflector oracle + spread. */
+/** Indicative live rate (non-binding). Reflector oracle + spread. */
 export async function indicativePrice(
   jwt: string,
   sellTry: string,
@@ -195,8 +195,8 @@ export async function indicativePrice(
 }
 
 /**
- * Kuru KİLİTLER. Dönen quote.id, SEP-6 deposit/withdraw çağrısına geçirilir;
- * böylece kullanıcı havaleyi yaparken kur oynamaz.
+ * LOCKS the rate. The returned quote.id is passed to the SEP-6 deposit/withdraw
+ * call, so the rate cannot move while the user makes the transfer.
  */
 export async function lockQuote(
   jwt: string,
@@ -237,14 +237,14 @@ export async function lockQuote(
 /* ─────────────────────────── SEP-6: transfer ──────────────────────────── */
 
 /**
- * ON-RAMP başlatır: TRY → USDC.
+ * Starts a DEPOSIT: TRY → USDC.
  *
- * Dönen `instructions` kullanıcının göreceği iki şeyi taşır:
- *   - bank_account_number  → havale yapılacak IBAN
- *   - external_transfer_memo → havale AÇIKLAMASINA yazılacak referans kodu
+ * The returned `instructions` carry the two things the user needs to see:
+ *   - bank_account_number   → the IBAN to transfer to
+ *   - external_transfer_memo → the reference code for the transfer DESCRIPTION
  *
- * NOT: `destination_asset` sadece varlık KODU ("USDC") olmalı.
- * `stellar:USDC:G...` formatı bu anchor tarafından reddediliyor (canlı doğrulandı).
+ * NOTE: `destination_asset` must be the asset CODE only ("USDC").
+ * The `stellar:USDC:G...` form is rejected by this anchor (verified live).
  */
 export async function startDeposit(
   jwt: string,
@@ -270,10 +270,10 @@ export async function startDeposit(
 }
 
 /**
- * OFF-RAMP başlatır: USDC → TRY.
+ * Starts a WITHDRAWAL: USDC → TRY.
  *
- * Dönen `account_id` + `memo` ile kullanıcı USDC'yi zincirde gönderir;
- * anchor ödemeyi memo'dan eşleştirip TRY'yi IBAN'a öder.
+ * With the returned `account_id` + `memo` the user sends USDC on chain;
+ * the anchor matches the payment by memo and pays out TRY to the IBAN.
  */
 export async function startWithdraw(
   jwt: string,
@@ -312,8 +312,8 @@ export async function getTransaction(
 }
 
 /**
- * İşlem bitene kadar durumu yoklar.
- * @param onUpdate her durum değişiminde çağrılır — UI'ı canlı tutmak için.
+ * Polls the status until the transaction settles.
+ * @param onUpdate called on every status change, to keep the UI live.
  */
 export async function pollTransaction(
   jwt: string,
@@ -326,7 +326,7 @@ export async function pollTransaction(
   let last = "";
 
   for (;;) {
-    if (opts.signal?.aborted) throw new AnchorError("Takip iptal edildi");
+    if (opts.signal?.aborted) throw new AnchorError("Tracking cancelled");
 
     const tx = await getTransaction(jwt, id);
     if (tx.status !== last) {
@@ -335,17 +335,17 @@ export async function pollTransaction(
     }
     if (tx.status === "completed" || tx.status === "error") return tx;
     if (Date.now() > deadline) {
-      throw new AnchorError(`İşlem zaman aşımına uğradı (son durum: ${tx.status})`);
+      throw new AnchorError(`Transaction timed out (last status: ${tx.status})`);
     }
     await new Promise((r) => setTimeout(r, interval));
   }
 }
 
 /**
- * SANDBOX: bankayı oynatır — TRY'nin geldiğini anchor'a bildirir.
+ * SANDBOX: plays the bank — tells the anchor the TRY has arrived.
  *
- * Gerçek bir anchor'da bu adım yok; parayı kullanıcının bankası gönderir.
- * Demoda judge'ın havale beklemesini engellemek için var.
+ * A real anchor has no such step; the user's bank sends the money.
+ * It exists so a reviewer does not have to wait on a bank transfer.
  */
 export async function simulateBankTransfer(
   jwt: string,

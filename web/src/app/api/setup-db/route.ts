@@ -1,13 +1,13 @@
 /**
- * Kurulum durumu — Supabase bağlı mı, tablolar yerinde mi?
+ * Setup status — is Supabase connected, and are the tables in place?
  *
- * Demo sırasında "koşu geçmişi neden boş?" sorusunu saniyesinde cevaplamak için.
- * Anon anahtarla çalışır; tablo OLUŞTURMAZ (anon anahtarın yetkisi yok).
- * Şema için: scripts/setup.sql → Supabase Dashboard → SQL Editor.
+ * It answers "why is the run history empty?" in a second during a demo.
+ * It runs with the anon key and does NOT create tables (the anon key cannot).
+ * For the schema: scripts/setup.sql → Supabase Dashboard → SQL Editor.
  *
- * Not: Supabase burada opsiyonel bir katman. Yarışmalar, ödül havuzu, katılım
- * ücretleri ve rozetler Soroban kontratlarında; bu tablolar yalnızca GPS
- * rotalarını ve yarışma üstverisini tutuyor.
+ * Note: Supabase is an optional layer here. Challenges, the prize pool, entry
+ * fees and badges all live in the Soroban contracts; these tables hold only
+ * GPS routes and challenge metadata.
  */
 
 import { NextResponse } from "next/server";
@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-/** PostgREST'e tek satır sorar; tablo yoksa PGRST205 döner. */
+/** Asks PostgREST for a single row; a missing table returns PGRST205. */
 async function probe(table: string) {
   const res = await fetch(`${url}/rest/v1/${table}?select=*&limit=1`, {
     headers: { apikey: key!, Authorization: `Bearer ${key!}` },
@@ -38,8 +38,8 @@ export async function GET() {
       {
         configured: false,
         message:
-          "Supabase yapılandırılmamış. Koşu geçmişi ve yarışma üstverisi devre dışı; " +
-          "zincire dayalı özelliklerin hiçbiri etkilenmez.",
+          "Supabase is not configured. Run history and challenge metadata are disabled; " +
+          "no chain-backed feature is affected.",
       },
       { status: 200 },
     );
@@ -58,7 +58,7 @@ export async function GET() {
         ? {}
         : {
             next_step:
-              "Supabase Dashboard → SQL Editor → web/scripts/setup.sql dosyasını yapıştırıp çalıştırın.",
+              "Supabase Dashboard → SQL Editor → paste and run web/scripts/setup.sql.",
           }),
     },
     { status: 200 },

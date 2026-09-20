@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * Şehir rozetleri — zincirden.
+ * City badges — read from chain.
  *
- * `runforrest_badge` kontratından okunuyor: hangi şehirde kaç koşu, hangi kademe.
+ * From the `runforrest_badge` contract: runs per city, and the tier reached.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { badges, type Badge, type BadgeTier } from "@/lib/stellar/contracts";
 
-/** Kademe → görsel dil. Orijinal RunForrest'ın nadirlik tablosu korundu. */
+/** Tier → visual language. The original rarity table is preserved. */
 export const TIER_META: Record<
   BadgeTier,
   { label: string; roman: string; rarity: string; gradient: string; text: string }
@@ -17,29 +17,29 @@ export const TIER_META: Record<
   Common: {
     label: "Common",
     roman: "I",
-    rarity: "1–5 koşu",
+    rarity: "1–5 runs",
     gradient: "from-white/10 to-white/5",
     text: "text-[#a0a0a0]",
   },
   Rare: {
     label: "Rare",
     roman: "II",
-    rarity: "6–15 koşu",
+    rarity: "6–15 runs",
     gradient: "from-[#00c2d7]/25 to-[#05a2c2]/15",
     text: "text-[#00c2d7]",
   },
   Epic: {
     label: "Epic",
     roman: "III",
-    rarity: "16–25 koşu",
+    rarity: "16–25 runs",
     gradient: "from-[#9e8cfc]/25 to-[#6e56cf]/15",
     text: "text-[#9e8cfc]",
   },
-  // En üst kademe marka rengini alıyor — altın, kazanılması en zor olan.
+  // The top tier takes the brand colour: gold, the hardest one to earn.
   Legendary: {
     label: "Legendary",
     roman: "IV",
-    rarity: "26+ koşu",
+    rarity: "26+ runs",
     gradient: "from-[#fdda24]/30 to-[#ffb224]/20",
     text: "text-[#fdda24]",
   },
@@ -68,11 +68,11 @@ export function useBadges(address: string | null) {
   }, [address]);
 
   /**
-   * Mount'ta ve bağımlılık değiştiğinde zincirden veri çeker.
+   * Fetches from chain on mount and whenever a dependency changes.
    *
-   * Kural setState'i effect içinde görüp uyarıyor; buradaki senkron çağrı
-   * yalnızca "yükleniyor" bayrağı, asıl veri await sonrası yazılıyor.
-   * Dış bir sistemden (Soroban RPC) veri çekmek effect'in tam da amacı.
+   * The lint rule flags setState inside an effect; the synchronous call here is
+   * only the "loading" flag — the real data is written after the await.
+   * Fetching from an external system (Soroban RPC) is exactly what effects are for.
    */
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

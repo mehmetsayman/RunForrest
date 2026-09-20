@@ -1,11 +1,11 @@
 /**
- * Cüzdan katmanı — Stellar Wallets Kit.
+ * Wallet layer — Stellar Wallets Kit.
  *
- * Stellar'da tek bir enjekte edilmiş cüzdan sağlayıcısı yok; Wallets Kit
- * Freighter, xBull, Albedo, Lobstr, Hana ve diğerlerini tek arayüzde topluyor.
+ * Stellar has no single injected wallet provider; Wallets Kit gathers
+ * Freighter, xBull, Albedo, Lobstr, Hana and others behind one interface.
  *
- * Kit tarayıcıya özgü (web component kullanıyor), bu yüzden yalnızca istemcide
- * ve tembel (lazy) olarak kuruluyor — Next.js sunucu render'ında patlamasın.
+ * The kit is browser-only (it uses a web component), so it is set up lazily
+ * and on the client alone, so Next.js server rendering does not break.
  *
  * Referans skill: skills/dapp/SKILL.md
  */
@@ -18,10 +18,10 @@ const STORAGE_ADDRESS = "runforrest:address";
 
 let kitPromise: Promise<StellarWalletsKit> | null = null;
 
-/** Kit'i yalnızca tarayıcıda, yalnızca bir kez kurar. */
+/** Sets the kit up once, and only in the browser. */
 async function getKit(): Promise<StellarWalletsKit> {
   if (typeof window === "undefined") {
-    throw new Error("Cüzdan yalnızca tarayıcıda kullanılabilir");
+    throw new Error("The wallet is only available in the browser");
   }
   if (!kitPromise) {
     kitPromise = (async () => {
@@ -50,13 +50,13 @@ function safeSet(key: string, value: string | null) {
     if (value === null) window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, value);
   } catch {
-    /* özel pencere / engelli depolama: sessizce geç */
+    /* private window or blocked storage: pass over it quietly */
   }
 }
 
 /**
- * Cüzdan seçme penceresini açar ve adresi döndürür.
- * Kullanıcı pencereyi kapatırsa null döner — hata değil, iptal.
+ * Opens the wallet picker and returns the address.
+ * Returns null if the user closes it — a cancellation, not an error.
  */
 export async function connectWallet(): Promise<string | null> {
   const kit = await getKit();
@@ -64,7 +64,7 @@ export async function connectWallet(): Promise<string | null> {
   const selected = await new Promise<string | null>((resolve) => {
     kit
       .openModal({
-        modalTitle: "Cüzdanını bağla",
+        modalTitle: "Connect your wallet",
         onWalletSelected: (option) => resolve(option.id),
         onClosed: () => resolve(null),
       })
@@ -88,13 +88,13 @@ export async function disconnectWallet(): Promise<void> {
     const kit = await getKit();
     await kit.disconnect();
   } catch {
-    /* bazı cüzdanlarda disconnect yok; yerel durumu temizlemek yeterli */
+    /* some wallets have no disconnect; clearing local state is enough */
   }
 }
 
 /**
- * Sayfa yenilendiğinde oturumu geri getirir.
- * Cüzdan artık erişilebilir değilse null döner ve yerel durum temizlenir.
+ * Restores the session on page reload.
+ * Returns null and clears local state if the wallet is no longer reachable.
  */
 export async function restoreWallet(): Promise<string | null> {
   const walletId = safeGet(STORAGE_WALLET);
@@ -104,21 +104,21 @@ export async function restoreWallet(): Promise<string | null> {
   try {
     const kit = await getKit();
     kit.setWallet(walletId);
-    // İzin istemeden sor: kullanıcıya gereksiz pencere açma.
+    // Ask without prompting: do not open a needless dialog.
     const { address } = await kit.getAddress({ skipRequestAccess: true });
     if (address) {
       safeSet(STORAGE_ADDRESS, address);
       return address;
     }
   } catch {
-    /* cüzdan kilitli ya da kaldırılmış */
+    /* wallet locked or removed */
   }
   return null;
 }
 
 /**
- * İşlem imzalar. Anchor'ın SEP-10 challenge'ı da, Soroban işlemleri de
- * bu tek yoldan geçer.
+ * Signs a transaction. Both the anchor's SEP-10 challenge and Soroban
+ * transactions go through this single path.
  */
 export async function signTransaction(xdr: string): Promise<string> {
   const kit = await getKit();

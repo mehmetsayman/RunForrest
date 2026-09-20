@@ -188,7 +188,7 @@ export default function CommunityPage() {
     setCreating(true);
     setFormError(null);
     try {
-      // Yarışma ZİNCİRDE oluşturulur; cüzdan işlemi imzalar.
+      // The challenge is created ON CHAIN; the wallet signs the transaction.
       await createChallenge(address, {
         title: form.title,
         description: form.description || undefined,
@@ -212,7 +212,7 @@ export default function CommunityPage() {
     setJoiningId(challengeId);
     setFormError(null);
     try {
-      // Katılım ücreti zincirde ödenir ve vault'a yatar.
+      // The entry fee is paid on chain and deposited into the vault.
       await joinChallenge(challengeId, address);
     } catch (e) {
       setFormError((e as Error).message);
@@ -487,13 +487,13 @@ export default function CommunityPage() {
           <div className="space-y-3">
             <input
               type="text"
-              placeholder="Yarışma adı *"
+              placeholder="Challenge name *"
               value={form.title}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none"
             />
             <textarea
-              placeholder="Açıklama (opsiyonel)"
+              placeholder="Description (optional)"
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               rows={2}
@@ -503,7 +503,7 @@ export default function CommunityPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="ml-1 text-[10px] text-muted-foreground">
-                  Katılım ücreti (USDC) *
+                  Entry fee (USDC) *
                 </label>
                 <input
                   type="number"
@@ -538,16 +538,16 @@ export default function CommunityPage() {
                 onChange={(e) => setForm((p) => ({ ...p, level: e.target.value }))}
                 className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm focus:border-primary/40 focus:outline-none"
               >
-                <option value="Herkes">Herkes</option>
-                <option value="Başlangıç">Başlangıç</option>
-                <option value="Orta">Orta</option>
-                <option value="İleri">İleri</option>
+                <option value="All levels">All levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] text-muted-foreground ml-1">Başlangıç *</label>
+                <label className="text-[10px] text-muted-foreground ml-1">Starts *</label>
                 <input
                   type="date"
                   value={form.startDate}
@@ -556,7 +556,7 @@ export default function CommunityPage() {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground ml-1">Bitiş *</label>
+                <label className="text-[10px] text-muted-foreground ml-1">Ends *</label>
                 <input
                   type="date"
                   value={form.endDate}
@@ -567,9 +567,9 @@ export default function CommunityPage() {
             </div>
 
             <p className="rounded-xl bg-white/[0.03] px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
-              Yarışma zincirde oluşturulur. Katılan herkesin ücreti DeFindex
-              vault&apos;una yatar; havuz bitişte ilk üçe 50/30/20 dağıtılır.
-              Ödül kuralı kontratta sabittir — sonradan değiştirilemez.
+              The challenge is created on chain. Every entry fee goes into the DeFindex
+              vault, and at the end the pool is split 50/30/20 among the top three.
+              The payout rule is fixed in the contract and cannot be changed later.
             </p>
 
             {formError && (
@@ -589,21 +589,21 @@ export default function CommunityPage() {
             ) : (
               <Zap className="size-4" />
             )}
-            {!isConnected ? "Önce cüzdanı bağla" : creating ? "Zincire yazılıyor…" : "Yarışmayı oluştur"}
+            {!isConnected ? "Connect your wallet first" : creating ? "Writing to chain…" : "Create challenge"}
           </NeonButton>
         </GlassCard>
       )}
 
-      {/* ─── TOPLULUK YARIŞMALARI (zincirden) ─── */}
+      {/* ─── COMMUNITY CHALLENGES (from chain) ─── */}
       {challenges.length > 0 && (
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold">
               <Trophy className="size-4 text-primary" />
-              Topluluk Yarışmaları
+              Community Challenges
             </h2>
             <span className="text-[10px] text-muted-foreground">
-              zincirden · {challenges.length}
+              from chain · {challenges.length}
             </span>
           </div>
           <div className="space-y-2.5">
@@ -627,9 +627,9 @@ export default function CommunityPage() {
                       )}
                       <span className="flex items-center gap-1">
                         <Calendar className="size-3" />
-                        {new Date(Number(c.chain.start_time) * 1000).toLocaleDateString("tr-TR", { month: "short", day: "numeric" })}
+                        {new Date(Number(c.chain.start_time) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         {" — "}
-                        {new Date(Number(c.chain.end_time) * 1000).toLocaleDateString("tr-TR", { month: "short", day: "numeric" })}
+                        {new Date(Number(c.chain.end_time) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                       {c.chain.target_distance_m > 0 && (
                         <span className="flex items-center gap-1">
@@ -641,23 +641,23 @@ export default function CommunityPage() {
                   </div>
                   <Badge className="shrink-0 gap-0.5 border-0 bg-amber-500/20 text-[9px] text-amber-300">
                     <Sparkles className="size-2.5" />
-                    {Number(c.poolUsdc).toFixed(2)} USDC havuz
+                    {Number(c.poolUsdc).toFixed(2)} USDC pool
                   </Badge>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <Users className="size-3" />
                     <span>
-                      {c.participants} katılımcı · {Number(c.entryFeeUsdc).toFixed(0)} USDC giriş
+                      {c.participants} participants · {Number(c.entryFeeUsdc).toFixed(0)} USDC entry
                     </span>
                   </div>
                   {c.joined ? (
                     <Badge className="border-0 bg-emerald-500/20 text-[10px] text-emerald-400">
-                      Katıldın
+                      Joined
                     </Badge>
                   ) : !c.isOpen ? (
                     <Badge className="border-0 bg-white/10 text-[10px] text-muted-foreground">
-                      Kapandı
+                      Closed
                     </Badge>
                   ) : (
                     <NeonButton
@@ -666,10 +666,10 @@ export default function CommunityPage() {
                       disabled={!isConnected || joiningId === c.id}
                     >
                       {!isConnected
-                        ? "Bağlan"
+                        ? "Connect"
                         : joiningId === c.id
-                          ? "İşleniyor…"
-                          : "Katıl"}
+                          ? "Processing…"
+                          : "Join"}
                     </NeonButton>
                   )}
                 </div>

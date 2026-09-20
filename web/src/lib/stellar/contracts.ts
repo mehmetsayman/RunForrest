@@ -1,8 +1,8 @@
 /**
  * Soroban kontrat istemcisi — runforrest_challenge, runforrest_badge ve USDC.
  *
- * Okumalar simülasyonla yapılır (ücretsiz, imza gerektirmez). Yazmalar
- * hazırlanır, cüzdanda imzalanır, gönderilir ve sonuçlanana kadar yoklanır.
+ * Reads are done by simulation (free, no signature). Writes are prepared,
+ * signed in the wallet, submitted, and polled until they settle.
  *
  * Referans skill: skills/dapp/SKILL.md, skills/data/SKILL.md
  */
@@ -32,7 +32,7 @@ import { signTransaction } from "./wallet";
 export const server = new rpc.Server(SOROBAN_RPC_URL);
 export const horizon = new Horizon.Server(HORIZON_URL);
 
-/** USDC 7 ondalıklı: 1 USDC = 10_000_000 stroop. */
+/** USDC has 7 decimals: 1 USDC = 10_000_000 stroops. */
 export const STROOP = 10_000_000n;
 
 export const toStroops = (usdc: string | number): bigint => {
@@ -60,8 +60,8 @@ export class ContractError extends Error {
 /* ────────────────────────────── temel yollar ───────────────────────────── */
 
 /**
- * Salt-okunur çağrı: simüle edilir, zincire hiçbir şey yazılmaz, imza istenmez.
- * Okuma için kaynak hesap önemsiz — simülasyon onu kullanmıyor.
+ * Read-only call: simulated, nothing is written to chain, no signature asked.
+ * The source account is irrelevant for a read — the simulation does not use it.
  */
 async function read<T>(
   contractId: string,
@@ -69,7 +69,7 @@ async function read<T>(
   args: xdr.ScVal[] = [],
 ): Promise<T> {
   const contract = new Contract(contractId);
-  // Simülasyon için herhangi bir geçerli hesap yeterli.
+  // Any valid account is enough for a simulation.
   const dummy = new Account(
     "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
     "0",
@@ -84,16 +84,16 @@ async function read<T>(
 
   const sim = await server.simulateTransaction(tx);
   if (rpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`${method} okunamadı: ${sim.error}`, sim);
+    throw new ContractError(`${method} could not be read: ${sim.error}`, sim);
   }
   if (!sim.result?.retval) {
-    throw new ContractError(`${method} boş sonuç döndürdü`);
+    throw new ContractError(`${method} returned an empty result`);
   }
   return scValToNative(sim.result.retval) as T;
 }
 
 /**
- * Durum değiştiren çağrı: hazırla → cüzdanda imzala → gönder → sonucu bekle.
+ * State-changing call: prepare → sign in the wallet → submit → await the result.
  */
 async function write(
   contractId: string,
@@ -112,13 +112,13 @@ async function write(
     .setTimeout(120)
     .build();
 
-  // prepareTransaction simülasyonu çalıştırır, footprint ve auth ağacını doldurur.
+  // prepareTransaction runs the simulation and fills in the footprint and auth tree.
   let prepared;
   try {
     prepared = await server.prepareTransaction(tx);
   } catch (e) {
     throw new ContractError(
-      `${method} hazırlanamadı: ${(e as Error).message}`,
+      `${method} could not be prepared: ${(e as Error).message}`,
       e,
     );
   }
@@ -131,7 +131,7 @@ async function write(
     throw new ContractError(`${method} reddedildi`, sent.errorResult);
   }
 
-  // Sonuçlanana kadar bekle.
+  // Wait until it settles.
   const deadline = Date.now() + 60_000;
   for (;;) {
     const got = await server.getTransaction(sent.hash);
@@ -142,10 +142,10 @@ async function write(
       };
     }
     if (got.status === rpc.Api.GetTransactionStatus.FAILED) {
-      throw new ContractError(`${method} zincirde başarısız oldu`, got);
+      throw new ContractError(`${method} failed on chain`, got);
     }
     if (Date.now() > deadline) {
-      throw new ContractError(`${method} zaman aşımına uğradı (hash ${sent.hash})`);
+      throw new ContractError(`${method} timed out (hash ${sent.hash})`);
     }
     await new Promise((r) => setTimeout(r, 1500));
   }
@@ -157,13 +157,13 @@ const i128 = (n: bigint) => nativeToScVal(n, { type: "i128" });
 const str = (s: string) => nativeToScVal(s, { type: "string" });
 
 /**
- * Soroban'ın birim (unit) enum varyantları `scValToNative` tarafından
- * TEK ELEMANLI DİZİ olarak çözülür: `Status::Finalized` → `["Finalized"]`.
+ * Soroban's unit enum variants are decoded by `scValToNative` as a
+ * SINGLE-ELEMENT ARRAY: `Status::Finalized` → `["Finalized"]`.
  *
- * Doğrudan karşılaştırırsanız (`status === "Finalized"`) her zaman false
- * döner ve hata vermez — sessizce yanlış davranır. Canlı zincire karşı
- * test edilirken yakalandı; okuma katmanında burada normalize ediyoruz ki
- * arayüz düz string görsün.
+ * Compare it directly (`status === "Finalized"`) and it is always false,
+ * with no error — it simply misbehaves in silence. Caught while testing
+ * against the live chain; we normalise it here in the read layer so the UI
+ * only ever sees a plain string.
  */
 function unwrapEnum<T extends string>(v: unknown): T {
   if (Array.isArray(v)) return String(v[0]) as T;
@@ -219,7 +219,7 @@ export const challenges = {
   roster: (id: number) =>
     read<string[]>(RUNFORREST_CHALLENGE_ID, "get_roster", [u32(id)]),
 
-  /** Katılımcı yoksa hata döner; çağıran tarafta null'a çeviriyoruz. */
+  /** Errors when the participant does not exist; the caller turns that into null. */
   participant: async (id: number, runner: string): Promise<Participant | null> => {
     try {
       return await read<Participant>(RUNFORREST_CHALLENGE_ID, "get_participant", [
@@ -231,14 +231,14 @@ export const challenges = {
     }
   },
 
-  /** Katılım ücretini USDC olarak alır ve DeFindex vault'una yatırır. */
+  /** Takes the entry fee in USDC and deposits it into the DeFindex vault. */
   join: (id: number, runner: string) =>
     write(RUNFORREST_CHALLENGE_ID, "join", runner, [u32(id), addr(runner)]),
 
   claim: (id: number, runner: string) =>
     write(RUNFORREST_CHALLENGE_ID, "claim", runner, [u32(id), addr(runner)]),
 
-  /** Bitiş zamanı geçtiyse herkes çağırabilir. */
+  /** Callable by anyone once the window has closed. */
   finalize: (id: number, caller: string) =>
     write(RUNFORREST_CHALLENGE_ID, "finalize", caller, [u32(id)]),
 
@@ -259,7 +259,7 @@ export const challenges = {
       u32(opts.targetDistanceM),
     ]),
 
-  /** Tüm yarışmaları katılımcı bilgisiyle birlikte getirir. */
+  /** Fetches every challenge along with its participant data. */
   listAll: async (viewer?: string) => {
     const n = await challenges.count();
     const out: Array<{ id: number; challenge: Challenge; mine: Participant | null }> =
@@ -270,7 +270,7 @@ export const challenges = {
         const mine = viewer ? await challenges.participant(id, viewer) : null;
         out.push({ id, challenge, mine });
       } catch {
-        /* silinmiş ya da TTL'i dolmuş kayıt: atla */
+        /* deleted or TTL-expired entry: skip */
       }
     }
     return out;
@@ -306,11 +306,11 @@ export const badges = {
 /* ──────────────────────────────── USDC ─────────────────────────────────── */
 
 /**
- * Hesap zincirde var mı?
+ * Does the account exist on chain?
  *
- * Stellar'da bir hesap, minimum XLM rezervini alana kadar VAR OLMAZ. Yeni
- * kurulmuş bir cüzdan bağlandığında Horizon 404 döner. Bunu kontrol etmeden
- * trustline açmaya çalışmak anlamsız bir "Not Found" hatasıyla sonuçlanır.
+ * On Stellar an account DOES NOT EXIST until it holds the minimum XLM
+ * reserve. Connect a freshly created wallet and Horizon returns 404. Trying
+ * to create a trustline without this check fails with a baffling "Not Found".
  */
 export async function accountExists(address: string): Promise<boolean> {
   try {
@@ -319,32 +319,32 @@ export async function accountExists(address: string): Promise<boolean> {
   } catch (e) {
     const status = (e as { response?: { status?: number } })?.response?.status;
     if (status === 404) return false;
-    // Ağ hatası: var olmadığını iddia etme.
+    // Network error: do not claim it does not exist.
     throw new ContractError(
-      `Hesap durumu okunamadı: ${(e as Error).message}`,
+      `Could not read account status: ${(e as Error).message}`,
       e,
     );
   }
 }
 
 /**
- * Testnet hesabını Friendbot ile açar.
+ * Activates a testnet account via Friendbot.
  *
- * Yalnızca testnet'te mümkün. Mainnet'te hesabı başka bir hesap fonlar; bu
- * adımın yerini gerçek üründe sponsored account creation alır (kullanıcı
- * hiç XLM görmeden hesabı açılır).
+ * Testnet only. On mainnet another account funds it; in a real product this
+ * step is replaced by sponsored account creation, so the user never has to
+ * see XLM at all.
  */
 export async function fundTestnetAccount(address: string): Promise<void> {
   const res = await fetch(
     `https://friendbot.stellar.org?addr=${encodeURIComponent(address)}`,
   );
   if (!res.ok && res.status !== 400) {
-    throw new ContractError(`Hesap açılamadı (Friendbot ${res.status})`);
+    throw new ContractError(`Could not activate the account (Friendbot ${res.status})`);
   }
-  // 400 genelde "zaten var" demek — sorun değil.
+  // A 400 usually means "already exists" — not a problem.
 }
 
-/** Cüzdanın USDC bakiyesi (stroop). Trustline yoksa 0. */
+/** The wallet's USDC balance, in stroops. Zero without a trustline. */
 export async function usdcBalance(address: string): Promise<bigint> {
   try {
     const v = await read<bigint>(USDC_SAC, "balance", [addr(address)]);
@@ -355,10 +355,10 @@ export async function usdcBalance(address: string): Promise<bigint> {
 }
 
 /**
- * Hesabın USDC trustline'ı var mı?
+ * Does the account have a USDC trustline?
  *
- * Anchor USDC'yi ancak trustline varsa doğrudan gönderebilir; yoksa deposit
- * `pending_trust` durumunda bekler. Ramp'ı başlatmadan önce kontrol ediyoruz.
+ * The anchor can only send USDC directly when a trustline exists; without one
+ * the deposit waits in `pending_trust`. We check before starting the ramp.
  */
 export async function hasUsdcTrustline(address: string): Promise<boolean> {
   const { USDC_CODE, USDC_ISSUER } = await import("./config");
@@ -375,14 +375,14 @@ export async function hasUsdcTrustline(address: string): Promise<boolean> {
   }
 }
 
-/** USDC trustline açar. Kullanıcı bunu bir kez yapar. */
+/** Creates the USDC trustline. The user does this once. */
 export async function createUsdcTrustline(address: string): Promise<string> {
   const { Asset, Operation } = await import("@stellar/stellar-sdk");
   const { USDC_CODE, USDC_ISSUER } = await import("./config");
 
   if (!(await accountExists(address))) {
     throw new ContractError(
-      "Stellar hesabın henüz açılmamış. Önce hesabı etkinleştir.",
+      "Your Stellar account is not activated yet. Activate it first.",
     );
   }
 

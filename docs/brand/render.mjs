@@ -15,7 +15,7 @@ for (const t of targets) {
   await page.goto(pathToFileURL(path.resolve(t.file)).href, {
     waitUntil: "networkidle",
   });
-  // web fontlarının yerleşmesini bekle
+  // wait for the web fonts to settle
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(1200);
   const el = await page.$(t.sel);

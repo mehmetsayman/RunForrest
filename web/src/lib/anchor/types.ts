@@ -1,11 +1,11 @@
 /**
  * TR Mock Anchor — SEP tipleri.
  *
- * Bu tipler canlı anchor'dan dönen gerçek yanıtlara göre yazıldı
- * (bkz. docs/TEKNIK-NOTLAR.md). Spec'ten kopya değil.
+ * These types were written from the real responses of the live anchor
+ * (see docs/TECHNICAL-NOTES.md), not copied from the spec.
  */
 
-/** SEP-1: stellar.toml'dan keşfedilen endpoint'ler. */
+/** SEP-1: endpoints discovered from stellar.toml. */
 export type AnchorInfo = {
   webAuthEndpoint: string;
   transferServer: string;
@@ -16,13 +16,13 @@ export type AnchorInfo = {
   assetIssuer: string;
 };
 
-/** SEP-10: challenge yanıtı. */
+/** SEP-10: the challenge response. */
 export type Sep10Challenge = {
   transaction: string;
   network_passphrase: string;
 };
 
-/** SEP-12: KYC durumu. Bu anchor'da otomatik onaylanır. */
+/** SEP-12: KYC status. Auto-approved by this anchor. */
 export type KycStatus = "ACCEPTED" | "PROCESSING" | "NEEDS_INFO" | "REJECTED";
 
 export type CustomerResponse = {
@@ -51,10 +51,10 @@ export type Quote = {
 };
 
 /**
- * SEP-6 işlem durumları.
+ * SEP-6 transaction statuses.
  *
  * Deposit:  pending_user_transfer_start -> pending_anchor -> completed
- *           (trustline yoksa pending_trust'ta bekler)
+ *           (without a trustline it waits in pending_trust)
  * Withdraw: pending_user_transfer_start -> completed
  */
 export type Sep6Status =
@@ -65,11 +65,11 @@ export type Sep6Status =
   | "completed"
   | "error";
 
-/** Deposit talimatı: kullanıcının TRY'yi nereye, hangi açıklamayla göndereceği. */
+/** Deposit instructions: where the user sends TRY, and with what reference. */
 export type DepositInstructions = {
-  /** Havale yapılacak IBAN. */
+  /** The IBAN to transfer to. */
   bank_account_number?: { value: string; description?: string };
-  /** Havale AÇIKLAMASINA yazılacak referans kodu — parayı hesaba bağlar. */
+  /** Reference code for the transfer DESCRIPTION — it links the money to the account. */
   external_transfer_memo?: { value: string; description?: string };
   [key: string]: { value: string; description?: string } | undefined;
 };
@@ -85,7 +85,7 @@ export type DepositResponse = {
   extra_info?: { message?: string };
 };
 
-/** Withdraw: USDC'nin gönderileceği hazine adresi + eşleştirme memo'su. */
+/** Withdraw: the treasury address to send USDC to, plus the matching memo. */
 export type WithdrawResponse = {
   id: string;
   account_id: string;
@@ -114,7 +114,7 @@ export type Sep6Transaction = {
   message?: string;
 };
 
-/** Bir işlemi imzalayan fonksiyon — cüzdan katmanından enjekte edilir. */
+/** A function that signs a transaction — injected from the wallet layer. */
 export type SignXdr = (xdr: string) => Promise<string>;
 
 export class AnchorError extends Error {

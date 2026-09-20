@@ -1,69 +1,69 @@
-# Vercel'e yayınlama
+# Deploying to Vercel
 
-Uygulama `web/` alt dizininde. Vercel'in **kök dizini oraya** bakması gerekiyor —
-tek dikkat edilecek nokta bu.
+The app lives in `web/`. Vercel's **root directory must point there** — that is
+the one thing to get right.
 
 ---
 
-## Yol 1 — CLI (hızlı)
+## Path 1 — CLI (quick)
 
 ```bash
-vercel login          # tarayıcı açılır, giriş yapın
+vercel login          # opens a browser, sign in
 cd web
 vercel --prod
 ```
 
-İlk çalıştırmada birkaç soru sorar:
+The first run asks a few questions:
 
-| Soru | Cevap |
+| Question | Answer |
 |---|---|
 | Set up and deploy? | **Y** |
-| Which scope? | kendi hesabınız |
+| Which scope? | your own account |
 | Link to existing project? | **N** |
 | Project name? | `runforrest` |
-| In which directory is your code located? | **`./`** (zaten `web/` içindesiniz) |
+| In which directory is your code located? | **`./`** (you are already in `web/`) |
 | Auto-detected settings? | **Y** (Next.js) |
 
 ---
 
-## Yol 2 — GitHub bağlantısı (her push'ta otomatik deploy)
+## Path 2 — GitHub integration (deploys on every push)
 
-1. [vercel.com/new](https://vercel.com/new) → repoyu seçin
-2. **Root Directory** → `web` olarak ayarlayın ← *bu adım atlanırsa build başarısız olur*
-3. Framework: Next.js (otomatik algılanır)
-4. Aşağıdaki ortam değişkenlerini girin → Deploy
+1. [vercel.com/new](https://vercel.com/new) → pick the repository
+2. **Root Directory** → set it to `web` ← *skip this and the build fails*
+3. Framework: Next.js (detected automatically)
+4. Enter the environment variables below → Deploy
 
 ---
 
-## Ortam değişkenleri
+## Environment variables
 
-### Zorunlu — bunlar olmadan da site açılır ama koşu zincire yazılmaz
+### Required — the site loads without it, but runs are not written to chain
 
-| Değişken | Değer |
+| Variable | Value |
 |---|---|
-| `ATTESTOR_SECRET` | Koşu mesafesini imzalayan **testnet secret key** (`S…`) |
+| `ATTESTOR_SECRET` | The **testnet secret key** (`S…`) that signs run distances |
 
-> **Sunucu tarafı.** `NEXT_PUBLIC_` öneki **koymayın**. Tarayıcıya sızarsa
-> herkes istediği mesafeyi zincire yazabilir.
+> **Server side.** Do **not** add the `NEXT_PUBLIC_` prefix. If it leaks into the
+> browser, anyone can write any distance they like to chain.
 >
-> Kontratlar bu attestor adresi `__constructor`'da sabitlenmiş olarak deploy
-> edildi ve config değiştirilemez. Yani şu an yalnızca mevcut anahtar
-> çalışıyor; üretimde ayrı bir anahtar istenirse `runforrest_challenge`
-> yeniden deploy edilmeli.
+> The contracts were deployed with this attestor address fixed in
+> `__constructor`, and the config cannot be changed. Only the existing key works
+> right now; if production needs a different one, `runforrest_challenge` has to
+> be redeployed.
 
-### Opsiyonel — koşu geçmişi ve yarışma üstverisi
+### Optional — run history and challenge metadata
 
-| Değişken | Not |
+| Variable | Note |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Boş bırakılırsa rota geçmişi kapalı kalır |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Tarayıcıda açığa çıkması tasarım gereği; koruma RLS'te |
+| `NEXT_PUBLIC_SUPABASE_URL` | Leave it empty and route history stays off |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Exposed in the browser by design; protection lives in RLS |
 
-Tablolar için: `web/scripts/setup.sql` → Supabase SQL Editor.
-Durum kontrolü: yayın sonrası `https://<alan-adı>/api/setup-db`
+For the tables: `web/scripts/setup.sql` → Supabase SQL Editor.
+To check the status after deploying: `https://<domain>/api/setup-db`
 
-### Varsayılanı olanlar — girmezseniz koddaki değer kullanılır
+### Defaulted — omit them and the values in the code are used
 
-| Değişken | Varsayılan |
+| Variable | Default |
 |---|---|
 | `NEXT_PUBLIC_RUNFORREST_CHALLENGE_ID` | `CAN4QVZURUX6OLBFC7IH2HQHQDUJDD72UBGJLXR67BKACWBQF4JVUWCM` |
 | `NEXT_PUBLIC_RUNFORREST_BADGE_ID` | `CBEMQGDLL2KNMBSINUSQM7QXMKAOMFIJDFQL27F3ZEWSRYA75WB3VCU6` |
@@ -73,28 +73,29 @@ Durum kontrolü: yayın sonrası `https://<alan-adı>/api/setup-db`
 
 ---
 
-## Yayın sonrası kontrol listesi
+## Post-deploy checklist
 
-1. **Ana sayfa açılıyor mu** — `/`
-2. **Zincir okumaları** — `/leaderboard` yarışmayı gösteriyor mu
-   (tarayıcıdan Soroban RPC'ye doğrudan çağrı yapılır; CORS açıktır)
-3. **Anchor** — `/profile` → *TRY ile yükle*; anchor `access-control-allow-origin: *`
-   verdiği için proxy gerekmez, doğrudan tarayıcıdan çağrılır
-4. **Attestation** — bir koşu kaydedin; `ATTESTOR_SECRET` yoksa 503 ve açıklayıcı
-   mesaj döner, sayfa çökmez
+1. **Does the landing page load** — `/`
+2. **Chain reads** — does `/leaderboard` show the challenge?
+   (Soroban RPC is called directly from the browser; CORS is open)
+3. **Anchor** — `/profile` → *Top up with TRY*; the anchor returns
+   `access-control-allow-origin: *`, so no proxy is needed and calls go straight
+   from the browser
+4. **Attestation** — record a run; without `ATTESTOR_SECRET` it returns 503 with
+   an explanatory message rather than crashing the page
 5. **Supabase** — `/api/setup-db` → `"ready": true`
-6. **Cüzdan** — Freighter **Testnet**'te olmalı; yeni hesap ise arayüz sırayla
-   *hesabı etkinleştir* → *USDC izni* adımlarını sunar
+6. **Wallet** — Freighter must be on **Testnet**; for a new account the UI offers
+   *activate account* → *enable USDC* as explicit steps
 
 ---
 
-## Bilinen kısıtlar
+## Known limitations
 
-**GPS için HTTPS gerekir.** Vercel zaten HTTPS veriyor, sorun yok — ama
-`http://` üzerinden servis edilen bir kopyada `navigator.geolocation` çalışmaz.
+**GPS requires HTTPS.** Vercel serves HTTPS, so this is fine — but
+`navigator.geolocation` will not work on a copy served over `http://`.
 
-**Harita karoları OpenStreetMap'ten geliyor.** Ücretsiz ama yoğun kullanım
-için tasarlanmadı; gerçek trafik olursa kendi karo kaynağınıza geçin.
+**Map tiles come from OpenStreetMap.** Free, but not built for heavy use; move to
+your own tile source once there is real traffic.
 
-**Anchor bir sandbox.** Banka bacağı simüle, KYC otomatik onaylı. Stellar
-bacağı gerçek testnet USDC'si.
+**The anchor is a sandbox.** The bank leg is simulated and KYC is auto-approved.
+The Stellar leg is real testnet USDC.

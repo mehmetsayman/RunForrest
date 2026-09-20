@@ -36,7 +36,7 @@ for (const [name, cid] of Object.entries(IDS)) {
     if (r.length) console.log(`${''.padEnd(15)} referanslar: ${r.join('\n' + ''.padEnd(29))}`);
     if (r.includes(anchorSac)) console.log(`${''.padEnd(15)} >>> ANCHOR USDC ILE AYNI SAC <<<`);
   } catch (err) {
-    console.log(`${name.padEnd(15)} YOK -> ${String(err.message).slice(0, 90)}`);
+    console.log(`${name.padEnd(15)} MISSING -> ${String(err.message).slice(0, 90)}`);
   }
   console.log('');
 }

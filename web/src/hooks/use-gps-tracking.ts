@@ -14,7 +14,7 @@ type RunStats = {
   avgSpeed: number; // km/h
   positions: LatLng[];
   currentPosition: LatLng | null;
-  /** Son okumanın yatay doğruluğu (metre). Kullanıcıya gösteriliyor. */
+  /** Horizontal accuracy of the last reading (metres). Shown to the user. */
   accuracy: number | null;
   startTime: number | null;
 };
@@ -53,9 +53,9 @@ function formatPace(metersPerSecond: number): string {
 }
 
 /**
- * Kaba kalori tahmini. Mesafeye dayalı (~60 kcal/km, 70 kg koşucu);
- * süre bilerek hesaba katılmıyor çünkü tempoya göre düzeltme yapmak
- * kilo ve nabız verisi olmadan anlamlı doğruluk kazandırmıyor.
+ * Rough calorie estimate, distance-based (~60 kcal/km for a 70 kg runner).
+ * Duration is deliberately ignored: correcting for pace adds no meaningful
+ * accuracy without body weight and heart-rate data.
  */
 function estimateCalories(distanceKm: number): number {
   return Math.round(distanceKm * 60);
@@ -74,15 +74,15 @@ const INITIAL_STATS: RunStats = {
 };
 
 /**
- * Mesafe SAYMAK için kabul edilen azami konum hatası (metre).
+ * Maximum position error (metres) accepted for COUNTING distance.
  *
- * Bu eşik yalnızca mesafe birikimini süzer — konumun kendisi her durumda
- * haritaya işlenir. Eşiği aşan okumaları tamamen atmak cazip ama yanlış:
- * masaüstünde konum Wi-Fi'dan geldiği için doğruluk çoğu zaman 100m üstünde
- * oluyor ve o durumda HİÇBİR nokta kaydedilmez — arayüz "GPS aktif" derken
- * mesafe 0m'de kalır, harita kullanıcıya hiç gelmez, sebep de söylenmez.
+ * The threshold filters distance accumulation only; the position itself is
+ * always drawn on the map. Discarding readings above it outright is tempting
+ * but wrong: on a desktop the position comes from Wi-Fi and accuracy is
+ * usually worse than 100 m, so NO point would ever be recorded — the UI would
+ * say "GPS active" while distance stayed at 0 m, with no map and no reason given.
  */
-const MIN_ACCURACY = 50; // gerçek koşuda telefon GPS'i tipik olarak 5–20m
+const MIN_ACCURACY = 50; // on a real run, phone GPS is typically 5–20 m
 const MIN_DISTANCE = 2; // meters - minimum movement to record
 
 export function useGpsTracking(): GpsTracking {
@@ -148,8 +148,8 @@ export function useGpsTracking(): GpsTracking {
         const { latitude, longitude, accuracy } = position.coords;
         const newPos: LatLng = [latitude, longitude];
 
-        // Doğruluk kötüyse konumu YİNE DE göster (harita kullanıcıya gelsin),
-        // ama mesafeye ekleme — yoksa sıçrayan okumalar sahte km üretir.
+        // On poor accuracy, STILL show the position (so the user gets a map),
+        // but do not add to distance — jumping readings would invent kilometres.
         if (accuracy > MIN_ACCURACY) {
           setStats((prev) => ({ ...prev, currentPosition: newPos, accuracy }));
           return;
@@ -194,14 +194,14 @@ export function useGpsTracking(): GpsTracking {
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
           setHasPermission(false);
-          setError("Konum izni verilmedi. Lütfen ayarlardan izin verin.");
+          setError("Location permission denied. Please allow it in your settings.");
           setState("idle");
           clearWatch();
           clearTimer();
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setError("Konum alınamıyor. GPS sinyali zayıf.");
+          setError("Cannot get a location. The GPS signal is weak.");
         } else if (err.code === err.TIMEOUT) {
-          setError("GPS zaman aşımı. Tekrar deneyin.");
+          setError("GPS timed out. Please try again.");
         }
       },
       {

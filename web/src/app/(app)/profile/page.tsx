@@ -83,20 +83,20 @@ export default function ProfilePage() {
   const [rampOpen, setRampOpen] = useState<"on" | "off" | null>(null);
 
   /**
-   * İstatistikler zincirden türetiliyor. Buraya sabit bir sayı yazmak
-   * ürünün tek iddiasını — doğrulanabilirliği — çürütürdü: zincir 5 km
-   * derken profilin 412 km göstermesi her şeyi şüpheli hale getirir.
+   * The statistics are derived from chain. Hardcoding a number here would
+   * defeat the product's one claim — verifiability. A profile showing 412 km
+   * while the chain says 5 km makes everything else suspect.
    */
   const lifetimeStats = {
     totalKm: badges.totalKm,
     totalRuns: String(badges.totalRuns),
     cities: String(badges.cities),
-    // Zincir mesafe ve koşu sayısı tutuyor; kalori/süre/tempo tutmuyor.
+    // The chain holds distance and run count; not calories, duration or pace.
     totalCalories: "—",
     totalTime: "—",
     avgPace: "—",
   };
-  /** İtibar = doğrulanmış kilometre × 10. Formül açık, veri zincirde. */
+  /** Reputation = verified kilometres × 10. The formula is open, the data is on chain. */
   const reputation = Math.round(badges.totalDistanceM / 100);
 
   const walletDisplay = isConnected ? displayAddress : "—";
@@ -132,9 +132,9 @@ export default function ProfilePage() {
 
           {/* Name & Info */}
           <h1 className="mt-4 font-mono text-xl font-bold tracking-tight">{isConnected ? displayAddress : "—"}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{badges.cities > 0 ? `${badges.cities} şehir · ${badges.totalRuns} doğrulanmış koşu` : "Henüz doğrulanmış koşu yok"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{badges.cities > 0 ? `${badges.cities} cities · ${badges.totalRuns} verified runs` : "No verified runs yet"}</p>
           <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
-            Bu profildeki her sayı Stellar üzerinde doğrulanabilir.
+            Every number on this profile is verifiable on Stellar.
           </p>
 
           {/* Badges */}
@@ -147,7 +147,7 @@ export default function ProfilePage() {
                   ? "Epic"
                   : badges.totalRuns >= 6
                     ? "Rare"
-                    : "Yeni koşucu"}
+                    : "New runner"}
             </Badge>
             <Badge className="gap-1 border-0 bg-amber-500/20 text-amber-300">
               <Flame className="size-3" />
@@ -182,11 +182,11 @@ export default function ProfilePage() {
         </div>
       </GlassCard>
 
-      {/* ─── PARA: YÜKLE / ÇEK ─── */}
+      {/* ─── MONEY: DEPOSIT / WITHDRAW ─── */}
       {isConnected && (
         <GlassCard className="p-4">
           <div className="mb-3 flex items-baseline justify-between">
-            <p className="text-sm font-semibold">Bakiyen</p>
+            <p className="text-sm font-semibold">Your balance</p>
             <p className="text-lg font-bold tabular-nums">
               {Number(balanceFormatted).toFixed(2)}{" "}
               <span className="text-xs font-normal text-muted-foreground">USDC</span>
@@ -199,7 +199,7 @@ export default function ProfilePage() {
               className="flex items-center justify-center gap-1.5 rounded-xl bg-primary/15 py-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
             >
               <ArrowDownToLine className="size-3.5" />
-              TRY ile yükle
+              Top up with TRY
             </button>
             <button
               type="button"
@@ -208,11 +208,11 @@ export default function ProfilePage() {
               className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-xs font-medium transition-colors hover:bg-white/[0.08] disabled:opacity-40"
             >
               <ArrowUpFromLine className="size-3.5" />
-              IBAN&apos;a çek
+              Withdraw to IBAN
             </button>
           </div>
           <p className="mt-2.5 text-center text-[10px] text-muted-foreground">
-            Türk bankası ile Stellar arasında · SEP-6 anchor
+            Between a Turkish bank and Stellar · SEP-6 anchor
           </p>
         </GlassCard>
       )}
@@ -225,21 +225,21 @@ export default function ProfilePage() {
           size={90}
           strokeWidth={6}
           icon={<Shield className="mb-0.5 size-4 text-primary" />}
-          label={reputation.toLocaleString("tr-TR")}
+          label={reputation.toLocaleString("en-US")}
           sublabel="reputation"
         />
         <div className="grid flex-1 grid-cols-2 gap-2">
-          <AnimatedStat label="Toplam KM" value={lifetimeStats.totalKm} icon={Route} delay={0} />
-          <AnimatedStat label="Koşu" value={lifetimeStats.totalRuns} icon={TrendingUp} delay={80} />
+          <AnimatedStat label="Total KM" value={lifetimeStats.totalKm} icon={Route} delay={0} />
+          <AnimatedStat label="Runs" value={lifetimeStats.totalRuns} icon={TrendingUp} delay={80} />
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
         {[
-          { icon: Flame, label: "Kalori", value: lifetimeStats.totalCalories },
-          { icon: Clock, label: "Süre", value: lifetimeStats.totalTime },
-          { icon: TrendingUp, label: "Tempo", value: lifetimeStats.avgPace },
-          { icon: Globe, label: "Şehir", value: lifetimeStats.cities },
+          { icon: Flame, label: "Calories", value: lifetimeStats.totalCalories },
+          { icon: Clock, label: "Time", value: lifetimeStats.totalTime },
+          { icon: TrendingUp, label: "Pace", value: lifetimeStats.avgPace },
+          { icon: Globe, label: "Cities", value: lifetimeStats.cities },
         ].map((stat) => (
           <GlassCard key={stat.label} className="p-2.5 text-center">
             <stat.icon className="mx-auto size-3.5 text-primary" />
@@ -273,7 +273,7 @@ export default function ProfilePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">
-              {badges.loading ? "Rozetler yükleniyor…" : `${badges.cities} Şehir Rozeti`}
+              {badges.loading ? "Loading badges…" : `${badges.cities} City Badges`}
             </h2>
             <Link href="/mint" className="flex items-center text-xs text-primary">
               Latest <ChevronRight className="size-3" />
@@ -302,7 +302,7 @@ export default function ProfilePage() {
                       <h3 className="mt-3 font-semibold">{b.city}</h3>
                       <p className="text-xs text-primary">Tier {meta.roman}</p>
                       <div className="mt-2 flex items-center justify-between text-[9px] text-muted-foreground">
-                        <span>{b.runs} koşu</span>
+                        <span>{b.runs} runs</span>
                         <span>{(Number(b.total_distance_m) / 1000).toFixed(1)} km</span>
                       </div>
                     </div>
@@ -318,9 +318,9 @@ export default function ProfilePage() {
                 <Sparkles className="size-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm font-medium">Henüz rozetin yok</p>
+                <p className="text-sm font-medium">No badges yet</p>
                 <p className="text-xs text-muted-foreground">
-                  Bir şehirde ilk koşunu tamamla — rozet zincire yazılsın
+                  Finish your first run in a city and the badge gets written on chain
                 </p>
               </div>
             </GlassCard>
@@ -333,10 +333,10 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-sm font-medium">
-                  {badges.totalRuns} koşu · {badges.totalKm} km
+                  {badges.totalRuns} runs · {badges.totalKm} km
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Yeni bir şehirde koş, koleksiyonu büyüt
+                  Run in a new city to grow the collection
                 </p>
               </div>
             </GlassCard>
@@ -415,19 +415,19 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* En çok koşulan şehir — zincirden */}
+          {/* Most-run city — from chain */}
           {badges.collection.length > 0 && (
             <GlassCard glow className="flex items-center gap-3 p-4">
               <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/20">
                 <Star className="size-5 text-amber-400" fill="currentColor" />
               </div>
               <div>
-                <p className="text-sm font-semibold">En çok koştuğun şehir</p>
+                <p className="text-sm font-semibold">Your most-run city</p>
                 <p className="text-xs text-muted-foreground">
                   <span className="font-bold text-amber-300">
                     {[...badges.collection].sort((a, b) => b.runs - a.runs)[0].city}
                   </span>{" "}
-                  — {[...badges.collection].sort((a, b) => b.runs - a.runs)[0].runs} koşu
+                  — {[...badges.collection].sort((a, b) => b.runs - a.runs)[0].runs} runs
                 </p>
               </div>
             </GlassCard>
@@ -500,7 +500,7 @@ export default function ProfilePage() {
           <Shield className="size-4 text-primary" />
           <span className="flex-1 text-sm font-medium">Onchain Reputation</span>
           <span className="font-mono text-xs text-muted-foreground">
-            {reputation.toLocaleString("tr-TR")} pts
+            {reputation.toLocaleString("en-US")} pts
           </span>
         </div>
 

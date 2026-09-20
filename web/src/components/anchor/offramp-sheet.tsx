@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * USDC → TRY çekme akışı.
+ * USDC → TRY withdrawal flow.
  *
- * On-ramp'in aynası. Kazancını banka hesabına çekmek isteyen koşucu için:
- * kur kilitlenir, anchor bir hazine adresi + memo verir, uygulama USDC'yi
- * o memo ile gönderir, anchor eşleştirip TRY'yi IBAN'a öder.
+ * The mirror of the deposit flow, for a runner cashing winnings out to a
+ * bank account: the rate locks, the anchor returns a treasury address and a
+ * memo, the app sends USDC with that memo, and the anchor matches the
+ * payment and pays out TRY to the IBAN.
  *
- * DİKKAT: memo tipi "id" — metin memo ile gönderilen ödeme eşleşmez ve para
- * kaybolur. `useAnchor.sendWithdrawPayment` bunu `Memo.id()` ile kuruyor.
+ * CAREFUL: the memo type is "id". A payment sent with a text memo does not
+ * match and the money is lost. `useAnchor.sendWithdrawPayment` builds it
+ * with `Memo.id()`.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -33,14 +35,14 @@ type Props = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  incomplete: "Başlatılıyor",
-  pending_user_transfer_start: "Ödemen bekleniyor",
-  pending_anchor: "Anchor işliyor",
-  completed: "Tamamlandı",
-  error: "Hata",
+  incomplete: "Starting",
+  pending_user_transfer_start: "Waiting for your payment",
+  pending_anchor: "Anchor processing",
+  completed: "Completed",
+  error: "Failed",
 };
 
-/** Anchor'ın mesajından hedef IBAN'ı ayıklar (sandbox kendi seçiyor). */
+/** Pulls the destination IBAN out of the anchor's message (the sandbox picks it). */
 function ibanFrom(message?: string): string | null {
   return message?.match(/TR\d{24}/)?.[0] ?? null;
 }
@@ -70,9 +72,9 @@ export function OffRampSheet({ open, onClose }: Props) {
   if (!open) return null;
 
   /**
-   * Off-ramp teklifinde `total_price` ters yönde geliyor (USDC başına değil,
-   * TRY başına). Kullanıcıya anlamlı kuru göstermek için buy/sell oranını
-   * hesaplıyoruz: 5 USDC → 242.70 TRY ise 48.54 ₺/USDC.
+   * On a withdrawal quote `total_price` comes back inverted (per TRY, not per
+   * USDC). To show a rate that means something we compute buy/sell instead:
+   * 5 USDC → 242.70 TRY is 48.54 ₺/USDC.
    */
   const tryPerUsdc =
     ramp.quote && Number(ramp.quote.sell_amount) > 0
@@ -89,9 +91,9 @@ export function OffRampSheet({ open, onClose }: Props) {
         <GlassCard strong className="max-h-[85vh] overflow-y-auto p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Banka hesabına çek</h2>
+              <h2 className="text-lg font-semibold">Withdraw to your bank</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                USDC gönder, IBAN&apos;ına Türk Lirası gelsin
+                Send USDC, receive Turkish Lira in your IBAN
               </p>
             </div>
             <button
@@ -104,18 +106,18 @@ export function OffRampSheet({ open, onClose }: Props) {
             </button>
           </div>
 
-          {/* ─── 1. tutar ─── */}
+          {/* ─── 1. amount ─── */}
           {(ramp.step === "idle" ||
             ramp.step === "authenticating" ||
             ramp.step === "quoting") && (
             <>
               <div className="mb-3 flex items-baseline justify-between text-xs">
-                <span className="text-muted-foreground">Bakiyen</span>
+                <span className="text-muted-foreground">Your balance</span>
                 <span className="font-semibold">{max.toFixed(2)} USDC</span>
               </div>
 
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Çekilecek tutar
+                Amount to withdraw
               </label>
               <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-primary/40">
                 <input
@@ -151,15 +153,15 @@ export function OffRampSheet({ open, onClose }: Props) {
                   onClick={() => setAmount(String(Math.floor(max * 100) / 100))}
                   className="rounded-lg bg-white/[0.05] px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-white/[0.1] disabled:opacity-30"
                 >
-                  Tümü
+                  Max
                 </button>
               </div>
 
               {!amountValid && (
                 <p className="mt-2 text-[11px] text-amber-400">
                   {max < 1
-                    ? "Çekmek için en az 1 USDC gerekiyor"
-                    : `Tutar 1 – ${Math.min(max, ANCHOR_LIMITS.maxUsdc).toFixed(2)} USDC arasında olmalı`}
+                    ? "You need at least 1 USDC to withdraw"
+                    : `Amount must be between 1 – ${Math.min(max, ANCHOR_LIMITS.maxUsdc).toFixed(2)} USDC`}
                 </p>
               )}
 
@@ -173,38 +175,38 @@ export function OffRampSheet({ open, onClose }: Props) {
                   <>
                     <Loader2 className="size-4 animate-spin" />
                     {ramp.step === "authenticating"
-                      ? "Kimlik doğrulanıyor…"
-                      : "Kur alınıyor…"}
+                      ? "Authenticating…"
+                      : "Fetching rate…"}
                   </>
                 ) : (
                   <>
-                    Devam et <ArrowRight className="size-4" />
+                    Continue <ArrowRight className="size-4" />
                   </>
                 )}
               </button>
 
               <p className="mt-3 text-center text-[10px] text-muted-foreground">
-                Kur işlem başlatıldığında kilitlenir · komisyon %
+                Rate locks when the transfer starts · fee 
                 {ANCHOR_LIMITS.feePercent}
               </p>
             </>
           )}
 
-          {/* ─── 2. ödemeyi onayla ─── */}
+          {/* ─── 2. confirm the payment ─── */}
           {ramp.step === "awaiting_payment" && ramp.withdraw && (
             <>
               {ramp.quote && (
                 <div className="mb-4 rounded-xl border border-primary/20 bg-primary/10 p-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-muted-foreground">Göndereceğin</span>
+                    <span className="text-xs text-muted-foreground">You send</span>
                     <span className="font-semibold">
                       {Number(ramp.quote.sell_amount).toFixed(2)} USDC
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <span className="text-xs text-muted-foreground">Alacağın</span>
+                    <span className="text-xs text-muted-foreground">You receive</span>
                     <span className="text-lg font-bold text-primary">
-                      {Number(ramp.quote.buy_amount).toLocaleString("tr-TR", {
+                      {Number(ramp.quote.buy_amount).toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}{" "}
@@ -222,7 +224,7 @@ export function OffRampSheet({ open, onClose }: Props) {
               {iban && (
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Paranın gideceği IBAN
+                    IBAN the money goes to
                   </p>
                   <p className="mt-1 break-all font-mono text-sm">{iban}</p>
                 </div>
@@ -232,9 +234,9 @@ export function OffRampSheet({ open, onClose }: Props) {
                 <div className="flex gap-2.5">
                   <Banknote className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Onayladığında USDC anchor&apos;ın hazinesine eşleştirme memo&apos;su
-                    ile gönderilir. Cüzdanın imza soracak. Bu bir{" "}
-                    <strong>test ortamı</strong> — gerçek para hareket etmiyor.
+                    On confirming, the USDC is sent to the anchor&apos;s treasury with a matching
+                    memo. Your wallet will ask for a signature. This is a{" "}
+                    <strong>test environment</strong> — no real money moves.
                   </p>
                 </div>
               </div>
@@ -245,20 +247,20 @@ export function OffRampSheet({ open, onClose }: Props) {
                 className="neon-glow mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
                 <Send className="size-4" />
-                USDC&apos;yi gönder
+                Send the USDC
               </button>
             </>
           )}
 
-          {/* ─── 3. işleniyor ─── */}
+          {/* ─── 3. processing ─── */}
           {ramp.step === "processing" && (
             <div className="py-6 text-center">
               <Loader2 className="mx-auto size-8 animate-spin text-primary" />
               <p className="mt-3 text-sm font-medium">
-                {STATUS_LABEL[ramp.tx?.status ?? ""] ?? "İşleniyor"}
+                {STATUS_LABEL[ramp.tx?.status ?? ""] ?? "Processing"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anchor ödemeyi bekliyor, sonra TRY&apos;yi gönderecek
+                The anchor is waiting for the payment, then sends the TRY
               </p>
               {ramp.tx?.status && (
                 <p className="mt-3 font-mono text-[10px] text-muted-foreground">
@@ -275,14 +277,14 @@ export function OffRampSheet({ open, onClose }: Props) {
                 <Check className="size-7 text-emerald-400" />
               </div>
               <p className="mt-3 text-lg font-semibold">
-                {Number(ramp.tx?.amount_out ?? 0).toLocaleString("tr-TR", {
+                {Number(ramp.tx?.amount_out ?? 0).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}{" "}
-                ₺ gönderildi
+                ₺ sent
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {iban ? `${iban} hesabına` : "Banka hesabına"}
+                {iban ? `to ${iban}` : "to your bank account"}
               </p>
               {ramp.tx?.stellar_transaction_id && (
                 <a
@@ -304,13 +306,13 @@ export function OffRampSheet({ open, onClose }: Props) {
             </div>
           )}
 
-          {/* ─── hata ─── */}
+          {/* ─── error ─── */}
           {ramp.step === "error" && (
             <div className="py-6 text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-red-500/15">
                 <AlertCircle className="size-7 text-red-400" />
               </div>
-              <p className="mt-3 text-sm font-medium">İşlem tamamlanamadı</p>
+              <p className="mt-3 text-sm font-medium">Withdrawal could not be completed</p>
               <p className="mt-1 break-words text-xs text-muted-foreground">
                 {ramp.error}
               </p>

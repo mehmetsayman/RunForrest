@@ -1,14 +1,14 @@
 #![no_std]
-//! RunForrest Badge — şehir başarı rozetleri.
+//! RunForrest Badge — city achievement badges.
 //!
-//! Rozet gerçek zincir durumu: hangi şehirde kaç koşu yapıldığı burada
-//! tutulur ve herkes tarafından okunabilir.
+//! A badge is real chain state: how many runs were completed in which city
+//! is stored here and readable by anyone.
 //!
-//! Rozetler DEVREDİLEMEZ (soulbound). Bilinçli bir seçim: ürünün iddiası
-//! "proof of active lifestyle" — satın alınabilen bir kanıt kanıt değildir.
-//! Bu aynı zamanda transfer/approve yüzeyini tamamen ortadan kaldırıyor.
+//! Badges are NON-TRANSFERABLE (soulbound). A deliberate choice: the product
+//! claims "proof of active lifestyle", and proof that can be bought is not proof.
+//! It also removes the transfer/approve surface entirely.
 //!
-//! Kullanılan skill dosyaları:
+//! Skill files used:
 //!   - skills/smart-contracts/SKILL.md
 //!   - skills/smart-contracts/development.md
 //!   - soroban-common-mistakes/SKILL.md
@@ -30,21 +30,21 @@ pub enum Error {
     InvalidDistance = 4,
 }
 
-/* ──────────────────────────────── veri ────────────────────────────────── */
+/* ──────────────────────────────── data ────────────────────────────────── */
 
 #[contracttype]
 #[derive(Clone)]
 pub struct Config {
     pub admin: Address,
-    /// Koşu kaydı yazabilen tek adres (attestor ya da challenge kontratı).
+    /// The only address allowed to record runs (the attestor or the challenge contract).
     pub minter: Address,
 }
 
-/// Orijinal RunForrest'ın kademe tablosu korundu.
+/// The original tier table is preserved.
 #[contracttype]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tier {
-    /// 1–5 koşu
+    /// 1–5 runs
     Common,
     /// 6–15
     Rare,
@@ -68,7 +68,7 @@ fn tier_for(runs: u32) -> Tier {
 pub struct Badge {
     pub city: String,
     pub runs: u32,
-    /// Bu şehirde koşulan toplam mesafe (metre).
+    /// Total distance run in this city, in metres.
     pub total_distance_m: u64,
     pub tier: Tier,
     pub first_earned: u64,
@@ -79,7 +79,7 @@ pub struct Badge {
 pub enum DataKey {
     Config,
     Badge(Address, String),
-    /// Koşucunun rozet kazandığı şehirler.
+    /// The cities a runner has earned badges in.
     Cities(Address),
 }
 
@@ -134,8 +134,8 @@ impl RunForrestBadge {
             .ok_or(Error::NotInitialized)
     }
 
-    /// Bir şehirde tamamlanan koşuyu kaydeder. İlk koşu rozeti yaratır,
-    /// sonrakiler sayacı ilerletir ve gerektiğinde kademeyi yükseltir.
+    /// Records a run completed in a city. The first run creates the badge;
+    /// later ones advance the counter and raise the tier when due.
     pub fn record_run(
         env: Env,
         runner: Address,
@@ -177,7 +177,7 @@ impl RunForrestBadge {
                 b
             }
             None => {
-                // Yeni şehir: rozet yaratılır ve şehir listesine eklenir.
+                // New city: the badge is created and added to the city list.
                 let ckey = DataKey::Cities(runner.clone());
                 let mut cities: Vec<String> = env
                     .storage()
@@ -223,7 +223,7 @@ impl RunForrestBadge {
         Ok(b)
     }
 
-    /// Koşucunun rozet kazandığı tüm şehirler.
+    /// Every city the runner has earned a badge in.
     pub fn get_cities(env: Env, runner: Address) -> Vec<String> {
         env.storage()
             .persistent()
@@ -231,7 +231,7 @@ impl RunForrestBadge {
             .unwrap_or(Vec::new(&env))
     }
 
-    /// Koleksiyonun tamamı — profil sayfası bunu tek çağrıda okur.
+    /// The whole collection — the profile page reads it in a single call.
     pub fn get_collection(env: Env, runner: Address) -> Vec<Badge> {
         let cities: Vec<String> = env
             .storage()
@@ -252,7 +252,7 @@ impl RunForrestBadge {
         out
     }
 
-    /// Yönetimsel: attestor anahtarı değişirse minter'ı günceller.
+    /// Administrative: updates the minter if the attestor key changes.
     pub fn set_minter(env: Env, new_minter: Address) -> Result<(), Error> {
         let mut cfg: Config = env
             .storage()
