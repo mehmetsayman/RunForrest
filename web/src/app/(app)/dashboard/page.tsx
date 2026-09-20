@@ -252,7 +252,7 @@ export default function DashboardPage() {
             href="/run"
             icon={Upload}
             label="Upload"
-            description="Import GPX/FIT"
+            description="Import GPX from Strava"
           />
           <QuickAction
             href="/leaderboard"

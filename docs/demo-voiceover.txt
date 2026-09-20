@@ -1,0 +1,40 @@
+RUNFORREST - DEMO SESLENDIRME METNI
+Her parcayi ayri ayri ElevenLabs e yapistirin. Sadece bu metinler okunacak.
+Kisaltmalardaki tireleri (S-E-P, G-P-S, I-B-A-N, K-Y-C) silmeyin.
+======================================================================
+
+--- PARCA 1  (0:00-0:18, 18 sn)  Problem ---
+
+A runner in Istanbul wants to join a ten dollar distance challenge. Today that means finding an exchange, passing K-Y-C, buying crypto, and learning what a wallet is. Most people stop at step one. And the prize pool? It sits in the organiser's account. You simply trust them.
+
+--- PARCA 2  (0:18-0:34, 16 sn)  Ne yaptık ---
+
+RunForrest makes the pool a contract instead of a promise, and the on-ramp a bank transfer instead of an exchange. Three Soroban contracts on Stellar Testnet. A Turkish lira rail in both directions. Twenty-four passing tests.
+
+--- PARCA 3  (0:34-1:10, 36 sn)  Fiat rayı ---
+
+Here is the part we care about most. A runner with no crypto taps Join. They are short on USDC, so the deposit sheet opens right there. No redirect. No pop-up. They never leave the app. The anchor speaks S-E-P six, which is programmatic, so we draw this screen ourselves. Behind it: discovery, authentication with the wallet key, K-Y-C, and a firm quote that locks the rate. The runner gets an I-B-A-N and a reference code, sends lira from their own bank, and USDC lands in their wallet. The join they started finishes by itself.
+
+--- PARCA 4  (1:10-1:32, 22 sn)  Strava'dan içe aktarma ---
+
+Most runners already have years of history somewhere else. So we import it. Open any activity in Strava, export the G-P-X file, and drop it here. RunForrest reads every track point: the route, the distance, the pace, the elevation. The map draws the run before anything touches the chain.
+
+--- PARCA 5  (1:32-1:52, 20 sn)  Canlı GPS ---
+
+Or track it live. The map follows your position, and the circle around it is the accuracy of the reading. A weak signal still shows where you are, but it does not count toward distance. Jumping readings would invent kilometres, and invented kilometres would be worth money here.
+
+--- PARCA 6  (1:52-2:10, 18 sn)  Zincire yazma ---
+
+Finish, confirm the city, and save. The distance is signed by the attestor and written to the challenge contract. The city badge is minted in the same step. Both are transactions you can open in a block explorer.
+
+--- PARCA 7  (2:10-2:30, 20 sn)  Ödül ve nakde çevirme ---
+
+When the window closes, anyone can finalise. Not the organiser. Anyone. The split is fixed in the contract: fifty, thirty, twenty. And if nobody ran at all, the entry fees are refunded, so the pool can never be stranded. The winner claims, and the money leaves the way it came. USDC out, Turkish lira into a bank account.
+
+--- PARCA 8  (2:30-2:46, 16 sn)  Neyin gerçek olduğu ---
+
+One thing we do not hide. G-P-S cannot be verified trustlessly in a weekend, so distance is signed by our attestor key. That is the single centralised point in the system. It is documented in the README, and the roadmap decentralises it.
+
+--- PARCA 9  (2:46-2:55, 9 sn)  Kapanış ---
+
+RunForrest. Proof of active lifestyle. The prize pool is a contract, not a promise. Live now at runforrest dot vercel dot app.
