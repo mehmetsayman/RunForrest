@@ -1,0 +1,56 @@
+<style>
+  html, body { margin: 0; width: 512px; height: 512px; background: transparent; }
+  svg { display: block; }
+</style>
+
+<!--
+  RunForrest amblemi — Stellar altını (#fdda24, SDS gold-09).
+
+  Halka tek bir daire; boşluklar stroke-dasharray ile açılıyor. İki ayrı yay
+  çizmek yerine bunu tercih ettim çünkü yayların uçları altta üst üste binip
+  halkayı çiftleştiriyordu.
+
+  Figür halkanın iç %70'inde kalıyor: maskelenebilir varyantta Android
+  kenarlardan kırpsa bile koşucuya dokunmuyor.
+-->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="neon" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#neon)">
+    <!-- Halka. Çevre = 2π·186 ≈ 1168. İki çizgi 520, iki boşluk 64. -->
+    <circle cx="256" cy="256" r="186"
+            fill="none" stroke="#fdda24" stroke-width="24"
+            stroke-linecap="round"
+            stroke-dasharray="520 64"
+            transform="rotate(-52 256 256)"/>
+
+    <!-- Figür halkaya değmesin diye %82 küçültülüp merkeze oturtuluyor. -->
+    <g transform="translate(256 256) scale(0.82) translate(-249 -288)">
+    <g fill="none" stroke="#fdda24" stroke-width="30"
+       stroke-linecap="round" stroke-linejoin="round">
+      <!-- Öne uzanan kol, omuza bağlanıyor -->
+      <path d="M 158 226 L 240 222 L 288 250"/>
+      <!-- Gövde -->
+      <path d="M 288 250 L 246 320"/>
+      <!-- Arkadaki kol, dirsekten kırık -->
+      <path d="M 292 262 L 340 300 L 320 344" stroke-width="25"/>
+      <!-- Öndeki bacak -->
+      <path d="M 246 320 L 300 352 L 270 424"/>
+      <!-- Arkadaki bacak, geriye savruluyor -->
+      <path d="M 246 320 L 176 370" stroke-width="27"/>
+    </g>
+
+    <!-- Baş -->
+    <circle cx="320" cy="180" r="29" fill="#fdda24"/>
+    </g>
+  </g>
+</svg>

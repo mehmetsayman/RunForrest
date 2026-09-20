@@ -31,7 +31,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icon-512.png",
-    apple: "/icon-192.png",
+    // iOS ayri bir dosya istiyor: seffafligi siyaha ceviriyor ve 180x180
+    // bekliyor, o yuzden opak zeminli kendi varyanti var.
+    apple: "/apple-touch-icon.png",
   },
 };
 
